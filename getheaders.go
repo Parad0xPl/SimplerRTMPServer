@@ -91,8 +91,8 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 			timestamp = t
 		}
 		messlength = readInt(tmp[3:6])
-		typeid = int(tmp[7])
-		streamid = readInt(tmp[8:])
+		typeid = int(tmp[6])
+		streamid = readInt(tmp[7:])
 	} else if format == 1 {
 		// Type 1
 		// 7 bytes long
@@ -113,7 +113,7 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		}
 		timestamp += ctx.lastHeader.Timestamp
 		messlength = readInt(tmp[3:6])
-		typeid = int(tmp[7])
+		typeid = int(tmp[6])
 		streamid = ctx.lastHeader.StreamID
 	} else if format == 2 {
 		// Type 2
