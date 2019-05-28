@@ -28,19 +28,24 @@ func getExtandedTime(c net.Conn) (int, error) {
 	return readInt(tmp), nil
 }
 
+// getHeaders get header of RTMP chunk as specified in documentation(docs.pdf)
 func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
+	// Read first byte with fmt and begin of chunk stream
 	firstbyte := make([]byte, 1)
 	var err error
 	_, err = c.Read(firstbyte)
 	if err != nil {
 		return headerEmpty(), err
 	}
+	// Splitting fmt of firstbyte
 	var mask = 3 << 6
 	format := (int(firstbyte[0]) & mask) >> 6
 	firstbyte[0] = byte(int(firstbyte[0]) & (mask ^ 0))
 	var chunkid int
 	var tmp []byte
+	// Handling possible lengths
 	if firstbyte[0] == 0 {
+		// 2 bytes long
 		tmp = make([]byte, 1)
 		_, err = c.Read(tmp)
 		if err != nil {
@@ -49,6 +54,7 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		chunkid = readInt(tmp)
 		chunkid += 64
 	} else if firstbyte[0] == 1 {
+		// 3 bytes long
 		tmp = make([]byte, 2)
 		_, err = c.Read(tmp)
 		if err != nil {
@@ -57,6 +63,7 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		chunkid = readInt(tmp)
 		chunkid += 64
 	} else if firstbyte[0] == 2 {
+		// Reserved for low-level protocol control messages and commands
 	} else {
 		chunkid = int(firstbyte[0])
 	}
@@ -67,6 +74,9 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 	typeid = -1
 	streamid = -1
 	if format == 0 {
+		// Type 0
+		// 11 bytes long
+		// Full data passed in header
 		tmp = make([]byte, 11)
 		_, err = c.Read(tmp)
 		if err != nil {
@@ -84,6 +94,10 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		typeid = int(tmp[7])
 		streamid = readInt(tmp[8:])
 	} else if format == 1 {
+		// Type 1
+		// 7 bytes long
+		// Streamid is sipped
+		// Timedelta instead of time
 		tmp = make([]byte, 7)
 		_, err = c.Read(tmp)
 		if err != nil {
@@ -102,6 +116,9 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		typeid = int(tmp[7])
 		streamid = ctx.lastHeader.StreamID
 	} else if format == 2 {
+		// Type 2
+		// 3 bytes long
+		// Only timedelta is given
 		tmp = make([]byte, 3)
 		_, err = c.Read(tmp)
 		if err != nil {
@@ -121,6 +138,8 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		typeid = ctx.lastHeader.TypeID
 
 	} else if format == 3 {
+		// Type 3
+		// Should use data from lastHeader
 		timestamp = ctx.lastHeader.Timestamp
 		streamid = ctx.lastHeader.StreamID
 		messlength = ctx.lastHeader.MessageLength

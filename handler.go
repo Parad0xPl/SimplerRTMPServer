@@ -62,6 +62,7 @@ func handler(c net.Conn) {
 			&headers,
 		}
 		if headers.ChunkID == 2 && headers.StreamID == 0 {
+			// Take effect when received
 			err = handlePCM(packet, c)
 			if err != nil {
 				log.Println(err)
