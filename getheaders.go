@@ -35,7 +35,9 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 	if err != nil {
 		return headerEmpty(), err
 	}
-	format := (int(firstbyte[0]) & 3 << 6) >> 6
+	var mask = 3 << 6
+	format := (int(firstbyte[0]) & mask) >> 6
+	firstbyte[0] = byte(int(firstbyte[0]) & (mask ^ 0))
 	var chunkid int
 	var tmp []byte
 	if firstbyte[0] == 0 {
