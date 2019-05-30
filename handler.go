@@ -30,6 +30,7 @@ type ConnectionSettings struct {
 type Packet struct {
 	ctx    *ConnectionSettings
 	header *Header
+	data   []byte
 }
 
 func initSettings() ConnectionSettings {
@@ -57,9 +58,17 @@ func handler(c net.Conn) {
 			log.Println(err)
 			return
 		}
+		data := make([]byte, headers.MessageLength)
+		_, err = c.Read(data)
+		if err != nil {
+			log.Println("Error while reading body", err)
+			return
+		}
+
 		packet := Packet{
 			&settings,
 			&headers,
+			data,
 		}
 		if headers.ChunkID == 2 && headers.StreamID == 0 {
 			// Take effect when received
@@ -68,12 +77,24 @@ func handler(c net.Conn) {
 				log.Println(err)
 				return
 			}
-		} else if headers.TypeID == 4 {
-			// TODO handleUCM
-			err = handleUCM(packet, c)
-			if err != nil {
-				log.Println(err)
-				return
+		} else {
+			switch headers.TypeID {
+			case 4:
+				// TODO handleUCM
+				err = handleUCM(packet, c)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+			case 15:
+				// TODO handle AMF3 data
+			case 17:
+				// TODO handle AMF3 command
+			case 18:
+				// TODO handle AMF0 data
+			case 20:
+				// TODO handle AMF0 command
+
 			}
 		}
 	}
