@@ -52,7 +52,7 @@ func handler(c net.Conn) {
 
 	for {
 		headers, err := getHeaders(c, &settings)
-		log.Println(headers)
+		log.Println("Headers", headers)
 		if err != nil {
 			log.Println(err)
 			return

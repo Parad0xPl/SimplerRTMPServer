@@ -40,7 +40,8 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 	// Splitting fmt of firstbyte
 	var mask = 3 << 6
 	format := (int(firstbyte[0]) & mask) >> 6
-	firstbyte[0] = byte(int(firstbyte[0]) & (mask ^ 0))
+	mask = ^mask
+	firstbyte[0] = byte(int(firstbyte[0]) & mask)
 	var chunkid int
 	var tmp []byte
 	// Handling possible lengths
@@ -64,6 +65,7 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		chunkid += 64
 	} else if firstbyte[0] == 2 {
 		// Reserved for low-level protocol control messages and commands
+		chunkid = int(firstbyte[0])
 	} else {
 		chunkid = int(firstbyte[0])
 	}
