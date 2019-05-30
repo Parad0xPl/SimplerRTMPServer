@@ -86,6 +86,10 @@ func handler(c net.Conn) {
 					log.Println(err)
 					return
 				}
+			case 8:
+				// TODO handle Audio message
+			case 9:
+				// TODO handle Video message
 			case 15:
 				// TODO handle AMF3 data
 			case 17:
@@ -93,6 +97,7 @@ func handler(c net.Conn) {
 			case 18:
 				// TODO handle AMF0 data
 			case 20:
+				handleAMF0cmd(packet, c)
 				// TODO handle AMF0 command
 
 			}
