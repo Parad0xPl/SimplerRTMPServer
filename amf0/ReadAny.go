@@ -13,6 +13,9 @@ func ReadAny(data []byte) (interface{}, int) {
 		tmp, n = ReadString(data[1:])
 	case 3:
 		tmp, n = ReadObject(data[1:])
+	case 5:
+		tmp = nil
+		n = 0
 	default:
 		return nil, 1
 	}
