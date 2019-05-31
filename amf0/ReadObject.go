@@ -9,6 +9,7 @@ func ReadObject(data []byte) (map[string]interface{}, int) {
 	i := 0
 	for {
 		if bytes.Compare(data[i:], []byte{0, 0, 9}) == 0 {
+			i += 3
 			break
 		}
 		key, n := ReadString(data[i:])
