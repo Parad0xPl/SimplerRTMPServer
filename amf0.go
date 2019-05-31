@@ -3,31 +3,35 @@ package main
 import (
 	"SimpleRTMPServer/amf0"
 	"errors"
-	"fmt"
 	"log"
 	"net"
 )
 
 func handleAMF0cmd(packet Packet, c net.Conn) error {
 	log.Println("AMF0 command")
-	var command string
-	var n int
-	if packet.data[0] != 2 {
-		return errors.New("Command doesn't start with string")
+	parsed := amf0.Read(packet.data)
+	command, ok := parsed[0].(string)
+	if !ok {
+		return errors.New("Wrong format")
 	}
-	i := 0
-	i++
-	command, n = amf0.ReadString(packet.data[i:])
-	i += n
-	log.Println("Command recived:", command)
+	switch command {
+	case "connect":
+		if !(len(parsed) >= 3) {
+			return errors.New("Insufficient number of parameters")
+		}
+		transactionID, ok := parsed[1].(float64)
+		if !ok {
+			return errors.New("Wrong format")
+		}
+		if transactionID != 1 {
+			log.Println("Transcation ID should equal 1")
+		}
+		commandObjectRaw, ok := parsed[2].(map[string]interface{})
+		if !ok {
+			return errors.New("Wrong format")
+		}
+		parseCommandObject(commandObjectRaw)
+	}
 
-	i++
-	transactionID, n := amf0.ReadNumber(packet.data[i:])
-	i += n
-	log.Println("TransactionId:", transactionID)
-	options, n := amf0.ReadObject(packet.data[13+len(command):])
-	for i, n := range options {
-		fmt.Println(i, n)
-	}
 	return nil
 }
