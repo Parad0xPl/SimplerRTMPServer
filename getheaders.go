@@ -2,7 +2,9 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net"
+	"strings"
 )
 
 // Header options
@@ -13,6 +15,17 @@ type Header struct {
 	MessageLength int
 	TypeID        int
 	StreamID      int
+}
+
+func (h Header) String() string {
+	var str strings.Builder
+	str.WriteString(fmt.Sprintf("Fmt:%d ", h.Format))
+	str.WriteString(fmt.Sprintf("ChuID:%d ", h.ChunkID))
+	str.WriteString(fmt.Sprintf("Timestm:%d ", h.Timestamp))
+	str.WriteString(fmt.Sprintf("Msglen:%d ", h.MessageLength))
+	str.WriteString(fmt.Sprintf("TypeID:%d ", h.TypeID))
+	str.WriteString(fmt.Sprintf("StrID:%d", h.StreamID))
+	return str.String()
 }
 
 func headerEmpty() Header {
