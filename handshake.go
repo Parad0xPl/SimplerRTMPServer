@@ -54,7 +54,8 @@ func handshake(c net.Conn) error {
 		return errors.New("Wrong length of handshake(c1): " + fmt.Sprint(n))
 	}
 	if !bytes.Equal(c1[4:8], []byte{0, 0, 0, 0}) {
-		return errors.New("Zero section is not filled with zeros: " + fmt.Sprint(c1[4:8]))
+		log.Println("Warning! Zero section is corrupted in c1")
+		// return errors.New("Zero section is not filled with zeros: " + fmt.Sprint(c1[4:8]))
 	}
 
 	// Send s2
@@ -78,10 +79,12 @@ func handshake(c net.Conn) error {
 
 	// Check integrity of c2
 	if !bytes.Equal(c2[0:4], s1[0:4]) {
-		return errors.New("c2 time don't match s1`s\n" + fmt.Sprint(c2[0:4], s1[0:4]))
+		log.Println("Fatal warning! c2`s time don't match s1`s")
+		// return errors.New("c2 time don't match s1`s\n" + fmt.Sprint(c2[0:4], s1[0:4]))
 	}
 	if !bytes.Equal(c2[4:8], c1[4:8]) {
-		return errors.New("c2 time don't match s1`s\n" + fmt.Sprint(c2[4:8], c1[4:8]))
+		log.Println("Fatal warning! c2`s time don't match c1`s")
+		// return errors.New("c2 time don't match c1`s\n" + fmt.Sprint(c2[4:8], c1[4:8]))
 	}
 	if !bytes.Equal(c2[8:], s1[8:]) {
 		return errors.New("c2 random data don't match s1`s")
