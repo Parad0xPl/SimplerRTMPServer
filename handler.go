@@ -11,14 +11,6 @@ func getTime() uint32 {
 	return uint32(time.Now().UnixNano() / 1000)
 }
 
-func readInt(b []byte) int {
-	tmp := 0
-	for i := 0; i < len(b); i++ {
-		tmp = tmp<<8 | int(b[i])
-	}
-	return tmp
-}
-
 // ConnectionSettings Structure for stream data and settings
 type ConnectionSettings struct {
 	ChunkSize  int

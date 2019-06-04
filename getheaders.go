@@ -1,6 +1,7 @@
 package main
 
 import (
+	"SimpleRTMPServer/utils"
 	"errors"
 	"fmt"
 	"net"
@@ -38,7 +39,7 @@ func getExtandedTime(c net.Conn) (int, error) {
 	if n != 4 || err != nil {
 		return 0, errors.New("Problem with extanded time")
 	}
-	return readInt(tmp), nil
+	return utils.ReadInt(tmp), nil
 }
 
 // getHeaders get header of RTMP chunk as specified in documentation(docs.pdf)
@@ -65,7 +66,7 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		if err != nil {
 			return headerEmpty(), err
 		}
-		chunkid = readInt(tmp)
+		chunkid = utils.ReadInt(tmp)
 		chunkid += 64
 	} else if firstbyte[0] == 1 {
 		// 3 bytes long
@@ -74,7 +75,7 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		if err != nil {
 			return headerEmpty(), err
 		}
-		chunkid = readInt(tmp)
+		chunkid = utils.ReadInt(tmp)
 		chunkid += 64
 	} else if firstbyte[0] == 2 {
 		// Reserved for low-level protocol control messages and commands
@@ -97,7 +98,7 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		if err != nil {
 			return headerEmpty(), err
 		}
-		timestamp = readInt(tmp[0:3])
+		timestamp = utils.ReadInt(tmp[0:3])
 		if ^timestamp == 0 {
 			t, err := getExtandedTime(c)
 			if err != nil {
@@ -105,9 +106,9 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 			}
 			timestamp = t
 		}
-		messlength = readInt(tmp[3:6])
+		messlength = utils.ReadInt(tmp[3:6])
 		typeid = int(tmp[6])
-		streamid = readInt(tmp[7:])
+		streamid = utils.ReadInt(tmp[7:])
 	} else if format == 1 {
 		// Type 1
 		// 7 bytes long
@@ -118,7 +119,7 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		if err != nil {
 			return headerEmpty(), err
 		}
-		timestamp = readInt(tmp[0:3])
+		timestamp = utils.ReadInt(tmp[0:3])
 		if ^timestamp == 0 {
 			t, err := getExtandedTime(c)
 			if err != nil {
@@ -127,7 +128,7 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 			timestamp = t
 		}
 		timestamp += ctx.lastHeader.Timestamp
-		messlength = readInt(tmp[3:6])
+		messlength = utils.ReadInt(tmp[3:6])
 		typeid = int(tmp[6])
 		streamid = ctx.lastHeader.StreamID
 	} else if format == 2 {
@@ -139,7 +140,7 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		if err != nil {
 			return headerEmpty(), err
 		}
-		timestamp = readInt(tmp[0:3])
+		timestamp = utils.ReadInt(tmp[0:3])
 		if ^timestamp == 0 {
 			t, err := getExtandedTime(c)
 			if err != nil {
