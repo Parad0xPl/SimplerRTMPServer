@@ -1,6 +1,7 @@
 package main
 
 import (
+	"SimpleRTMPServer/utils"
 	"errors"
 	"fmt"
 	"net"
@@ -17,7 +18,7 @@ func handlePCM(packet Packet, c net.Conn) error {
 		if patt&packet.data[0] != 0 {
 			return errors.New("Wrong chunk size")
 		}
-		ctx.ChunkSize = readInt(packet.data)
+		ctx.ChunkSize = utils.ReadInt(packet.data)
 	} else if head.TypeID == 2 {
 		fmt.Println("Get 'Abort Message'")
 		// TODO Abort message
