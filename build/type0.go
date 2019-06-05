@@ -6,7 +6,7 @@ import (
 )
 
 // Type0 header
-func Type0(timestamp, msglen, msgtypeid, msgstreamid int) []byte {
+func (header) Type0(timestamp, msglen, msgtypeid, msgstreamid int) []byte {
 	buffer := new(bytes.Buffer)
 	buffer.Write(utils.WriteInt(timestamp, 3))
 	buffer.Write(utils.WriteInt(msglen, 3))

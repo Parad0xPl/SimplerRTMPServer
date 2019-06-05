@@ -6,7 +6,7 @@ import (
 )
 
 // Type2 header
-func Type2(timestamp int) []byte {
+func (header) Type2(timestamp int) []byte {
 	buffer := new(bytes.Buffer)
 	buffer.Write(utils.WriteInt(timestamp, 3))
 	if timestamp >= 0xFFFFFF {
