@@ -18,11 +18,16 @@ type ConnectionSettings struct {
 	lastHeader Header
 }
 
+// PacketData data
+type PacketData struct {
+	bytes []byte
+}
+
 // Packet wrapper for all packet related data
 type Packet struct {
 	ctx    *ConnectionSettings
 	header *Header
-	data   []byte
+	data   *PacketData
 }
 
 func initSettings() ConnectionSettings {
@@ -57,10 +62,14 @@ func handler(c net.Conn) {
 			return
 		}
 
+		packetData := PacketData{
+			bytes: data,
+		}
+
 		packet := Packet{
 			&settings,
 			&headers,
-			data,
+			&packetData,
 		}
 		if headers.ChunkID == 2 && headers.StreamID == 0 {
 			// Take effect when received

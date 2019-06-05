@@ -15,10 +15,10 @@ func handlePCM(packet Packet, c net.Conn) error {
 		fmt.Println("Get 'Set Chunk Size'")
 		var patt byte = 1
 		patt <<= 7
-		if patt&packet.data[0] != 0 {
+		if patt&packet.data.bytes[0] != 0 {
 			return errors.New("Wrong chunk size")
 		}
-		ctx.ChunkSize = utils.ReadInt(packet.data)
+		ctx.ChunkSize = utils.ReadInt(packet.data.bytes)
 	} else if head.TypeID == 2 {
 		fmt.Println("Get 'Abort Message'")
 		// TODO Abort message
