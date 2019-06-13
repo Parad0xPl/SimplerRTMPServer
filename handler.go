@@ -13,9 +13,11 @@ func getTime() uint32 {
 
 // ConnectionSettings Structure for stream data and settings
 type ConnectionSettings struct {
-	ChunkSize  int
-	initTime   uint32
-	lastHeader Header
+	ChunkSize          int
+	initTime           uint32
+	lastHeaderReceived Header
+	lastHeaderSended   *Header
+	Properties         *map[string]interface{}
 }
 
 // PacketData data

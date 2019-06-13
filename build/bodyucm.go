@@ -5,7 +5,7 @@ import (
 	"bytes"
 )
 
-func (body) ucm(eventtype int, data []byte) ([]byte, int) {
+func (body) UCM(eventtype int, data []byte) ([]byte, int) {
 	buffer := new(bytes.Buffer)
 	buffer.Write(utils.WriteInt(eventtype, 2))
 	buffer.Write(data)
