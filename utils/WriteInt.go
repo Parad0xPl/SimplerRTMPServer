@@ -7,7 +7,7 @@ func WriteInt(n, len int) []byte {
 		n = (1 << (uint(len) * 8)) - 1
 	}
 	for i := 0; i < len; i++ {
-		v[i] = byte(n & 255)
+		v[len-1-i] = byte(n & 255)
 		n = n >> 8
 	}
 	return v
