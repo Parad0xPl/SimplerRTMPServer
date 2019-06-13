@@ -13,7 +13,12 @@ func WriteAny(v interface{}) []byte {
 	case nil:
 		buff = []byte{5}
 	case map[string]interface{}:
-		buff = WriteObject(v.(map[string]interface{}))
+		tmp := v.(map[string]interface{})
+		if len(tmp) > 0 {
+			buff = WriteObject(tmp)
+		} else {
+			buff = []byte{}
+		}
 	}
 	return buff
 }
