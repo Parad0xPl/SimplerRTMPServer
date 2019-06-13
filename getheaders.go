@@ -203,5 +203,6 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		TypeID:        typeid,
 		StreamID:      streamid,
 	}
+	ctx.lastHeaderReceived = lastHeader
 	return lastHeader, nil
 }

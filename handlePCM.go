@@ -24,7 +24,8 @@ func handlePCM(packet Packet, c net.Conn) error {
 		// TODO Abort message
 	} else if head.TypeID == 3 {
 		fmt.Println("Get 'Acknowledgement'")
-		// TODO
+		seqnum := utils.ReadInt(packet.data.bytes[0:4])
+		fmt.Println("Sequence number:", seqnum)
 	} else if head.TypeID == 5 {
 		fmt.Println("Get 'Window Acknowledgement Size'")
 		// TODO
