@@ -18,6 +18,39 @@ type Header struct {
 	StreamID      int
 }
 
+// Compare is headers have common values
+func (h *Header) Compare(o Header) bool {
+	if h.ChunkID != o.ChunkID {
+		return false
+	}
+	if h.Format != o.Format {
+		return false
+	}
+	if h.MessageLength != o.MessageLength {
+		return false
+	}
+	if h.StreamID != o.StreamID {
+		return false
+	}
+	if h.Timestamp != o.Timestamp {
+		return false
+	}
+	if h.TypeID != o.TypeID {
+		return false
+	}
+	return true
+}
+
+// CopyFrom other header
+func (h *Header) CopyFrom(o *Header) {
+	h.ChunkID = o.ChunkID
+	h.Format = o.Format
+	h.MessageLength = o.MessageLength
+	h.StreamID = o.StreamID
+	h.Timestamp = o.Timestamp
+	h.TypeID = o.TypeID
+}
+
 func (h Header) String() string {
 	var str strings.Builder
 	str.WriteString(fmt.Sprintf("Fmt:%d ", h.Format))
@@ -127,10 +160,10 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 			}
 			timestamp = t
 		}
-		timestamp += ctx.lastHeader.Timestamp
+		timestamp += ctx.lastHeaderReceived.Timestamp
 		messlength = utils.ReadInt(tmp[3:6])
 		typeid = int(tmp[6])
-		streamid = ctx.lastHeader.StreamID
+		streamid = ctx.lastHeaderReceived.StreamID
 	} else if format == 2 {
 		// Type 2
 		// 3 bytes long
@@ -148,18 +181,18 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 			}
 			timestamp = t
 		}
-		timestamp += ctx.lastHeader.Timestamp
-		streamid = ctx.lastHeader.StreamID
-		messlength = ctx.lastHeader.MessageLength
-		typeid = ctx.lastHeader.TypeID
+		timestamp += ctx.lastHeaderReceived.Timestamp
+		streamid = ctx.lastHeaderReceived.StreamID
+		messlength = ctx.lastHeaderReceived.MessageLength
+		typeid = ctx.lastHeaderReceived.TypeID
 
 	} else if format == 3 {
 		// Type 3
 		// Should use data from lastHeader
-		timestamp = ctx.lastHeader.Timestamp
-		streamid = ctx.lastHeader.StreamID
-		messlength = ctx.lastHeader.MessageLength
-		typeid = ctx.lastHeader.TypeID
+		timestamp = ctx.lastHeaderReceived.Timestamp
+		streamid = ctx.lastHeaderReceived.StreamID
+		messlength = ctx.lastHeaderReceived.MessageLength
+		typeid = ctx.lastHeaderReceived.TypeID
 	}
 
 	lastHeader := Header{
