@@ -28,7 +28,8 @@ func handlePCM(packet Packet, c net.Conn) error {
 		fmt.Println("Sequence number:", seqnum)
 	} else if head.TypeID == 5 {
 		fmt.Println("Get 'Window Acknowledgement Size'")
-		// TODO
+		packet.ctx.ClientWindowAcknowledgement = utils.ReadInt(packet.data.bytes[0:4])
+		fmt.Println("Client WinAck:", packet.ctx.ClientWindowAcknowledgement)
 	} else if head.TypeID == 6 {
 		fmt.Println("Get 'Set Peer Bandwidth'")
 		// TODO
