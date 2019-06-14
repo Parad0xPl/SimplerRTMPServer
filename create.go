@@ -141,10 +141,10 @@ func (create) commandMessage(raw []interface{}) (Header, []byte) {
 	return head, body
 }
 
-func (create) resultMessage(props, infos map[string]interface{}) (Header, []byte) {
+func (create) resultMessage(transID int, props, infos interface{}) (Header, []byte) {
 	raw := make([]interface{}, 4)
 	raw[0] = "_result"
-	raw[1] = 1
+	raw[1] = transID
 	raw[2] = props
 	raw[3] = infos
 	head, body := Create.commandMessage(raw)

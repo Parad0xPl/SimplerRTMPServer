@@ -23,6 +23,7 @@ type ConnectionSettings struct {
 	ServerWindowAcknowledgement int
 	ClientWindowAcknowledgement int
 	PeerBandwidth               int
+	PeerBandwidthType           int
 }
 
 // PacketData data
@@ -41,7 +42,7 @@ func initSettings() ConnectionSettings {
 	return ConnectionSettings{
 		ChunkSize:                   128,
 		initTime:                    getTime(),
-		ServerWindowAcknowledgement: 1024,
+		ServerWindowAcknowledgement: 2500000,
 		PeerBandwidth:               128,
 	}
 }

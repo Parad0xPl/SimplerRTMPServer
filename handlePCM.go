@@ -4,11 +4,13 @@ import (
 	"SimpleRTMPServer/utils"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 )
 
 // handlePCM Handle 'Protocol Control Messages'
 func handlePCM(packet Packet, c net.Conn) error {
+	log.Println("PCM Packet")
 	head := packet.header
 	ctx := packet.ctx
 	if head.TypeID == 1 {
@@ -32,7 +34,11 @@ func handlePCM(packet Packet, c net.Conn) error {
 		fmt.Println("Client WinAck:", packet.ctx.ClientWindowAcknowledgement)
 	} else if head.TypeID == 6 {
 		fmt.Println("Get 'Set Peer Bandwidth'")
-		// TODO
+		typ := utils.ReadInt(packet.data.bytes[4:5])
+		if !(typ == 2 && packet.ctx.PeerBandwidthType == 1) {
+			packet.ctx.PeerBandwidth = utils.ReadInt(packet.data.bytes[0:4])
+			packet.ctx.PeerBandwidthType = typ % 2
+		}
 	}
 	return nil
 }
