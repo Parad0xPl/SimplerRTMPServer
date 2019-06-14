@@ -13,13 +13,16 @@ func getTime() uint32 {
 
 // ConnectionSettings Structure for stream data and settings
 type ConnectionSettings struct {
-	ChunkSize          int
-	initTime           uint32
-	lastHeaderReceived Header
-	lastHeaderSended   *Header
-	SizeRead           int
-	SizeWrote          int
-	Properties         *map[string]interface{}
+	ChunkSize                   int
+	initTime                    uint32
+	lastHeaderReceived          Header
+	lastHeaderSended            *Header
+	SizeRead                    int
+	SizeWrote                   int
+	Properties                  *map[string]interface{}
+	ServerWindowAcknowledgement int
+	ClientWindowAcknowledgement int
+	PeerBandwidth               int
 }
 
 // PacketData data
@@ -36,8 +39,10 @@ type Packet struct {
 
 func initSettings() ConnectionSettings {
 	return ConnectionSettings{
-		ChunkSize: 128,
-		initTime:  getTime(),
+		ChunkSize:                   128,
+		initTime:                    getTime(),
+		ServerWindowAcknowledgement: 1024,
+		PeerBandwidth:               128,
 	}
 }
 

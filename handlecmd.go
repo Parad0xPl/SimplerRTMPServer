@@ -18,9 +18,9 @@ func handleCmd(packet Packet, c net.Conn, raw []interface{}) error {
 		if ok {
 			packet.ctx.Properties = &cmdObj
 		}
-		head, body := Create.PCMWindowAckSize(128)
+		head, body := Create.PCMWindowAckSize(packet.ctx.ServerWindowAcknowledgement)
 		sendPacket(c, packet.ctx, head, body)
-		head, body = Create.PCMSetPeerBandwitdh(128, 1)
+		head, body = Create.PCMSetPeerBandwitdh(packet.ctx.PeerBandwidth, 1)
 		sendPacket(c, packet.ctx, head, body)
 		head, body = Create.UCMStreamBegin(streamID)
 		sendPacket(c, packet.ctx, head, body)
