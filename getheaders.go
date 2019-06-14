@@ -16,6 +16,7 @@ type Header struct {
 	MessageLength int
 	TypeID        int
 	StreamID      int
+	Size          int
 }
 
 // Compare is headers have common values
@@ -62,10 +63,6 @@ func (h Header) String() string {
 	return str.String()
 }
 
-func headerEmpty() Header {
-	return Header{}
-}
-
 func getExtandedTime(c net.Conn) (int, error) {
 	tmp := make([]byte, 4)
 	n, err := c.Read(tmp)
@@ -78,11 +75,13 @@ func getExtandedTime(c net.Conn) (int, error) {
 // getHeaders get header of RTMP chunk as specified in documentation(docs.pdf)
 func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 	// Read first byte with fmt and begin of chunk stream
+	size := 0
 	firstbyte := make([]byte, 1)
 	var err error
 	_, err = c.Read(firstbyte)
+	size++
 	if err != nil {
-		return headerEmpty(), err
+		return Header{}, err
 	}
 	// Splitting fmt of firstbyte
 	var mask = 3 << 6
@@ -96,8 +95,9 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		// 2 bytes long
 		tmp = make([]byte, 1)
 		_, err = c.Read(tmp)
+		size++
 		if err != nil {
-			return headerEmpty(), err
+			return Header{}, err
 		}
 		chunkid = utils.ReadInt(tmp)
 		chunkid += 64
@@ -105,8 +105,9 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		// 3 bytes long
 		tmp = make([]byte, 2)
 		_, err = c.Read(tmp)
+		size += 2
 		if err != nil {
-			return headerEmpty(), err
+			return Header{}, err
 		}
 		chunkid = utils.ReadInt(tmp)
 		chunkid += 64
@@ -128,14 +129,16 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		// Full data passed in header
 		tmp = make([]byte, 11)
 		_, err = c.Read(tmp)
+		size += 11
 		if err != nil {
-			return headerEmpty(), err
+			return Header{}, err
 		}
 		timestamp = utils.ReadInt(tmp[0:3])
 		if ^timestamp == 0 {
 			t, err := getExtandedTime(c)
+			size += 4
 			if err != nil {
-				return headerEmpty(), err
+				return Header{}, err
 			}
 			timestamp = t
 		}
@@ -149,14 +152,16 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		// Timedelta instead of time
 		tmp = make([]byte, 7)
 		_, err = c.Read(tmp)
+		size += 7
 		if err != nil {
-			return headerEmpty(), err
+			return Header{}, err
 		}
 		timestamp = utils.ReadInt(tmp[0:3])
 		if ^timestamp == 0 {
 			t, err := getExtandedTime(c)
+			size += 4
 			if err != nil {
-				return headerEmpty(), err
+				return Header{}, err
 			}
 			timestamp = t
 		}
@@ -170,14 +175,16 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		// Only timedelta is given
 		tmp = make([]byte, 3)
 		_, err = c.Read(tmp)
+		size += 3
 		if err != nil {
-			return headerEmpty(), err
+			return Header{}, err
 		}
 		timestamp = utils.ReadInt(tmp[0:3])
 		if ^timestamp == 0 {
+			size += 4
 			t, err := getExtandedTime(c)
 			if err != nil {
-				return headerEmpty(), err
+				return Header{}, err
 			}
 			timestamp = t
 		}
@@ -190,6 +197,14 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		// Type 3
 		// Should use data from lastHeader
 		timestamp = ctx.lastHeaderReceived.Timestamp
+		if ^timestamp == 0 {
+			size += 4
+			t, err := getExtandedTime(c)
+			if err != nil {
+				return Header{}, err
+			}
+			timestamp = t
+		}
 		streamid = ctx.lastHeaderReceived.StreamID
 		messlength = ctx.lastHeaderReceived.MessageLength
 		typeid = ctx.lastHeaderReceived.TypeID
@@ -202,6 +217,7 @@ func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
 		MessageLength: messlength,
 		TypeID:        typeid,
 		StreamID:      streamid,
+		Size:          size,
 	}
 	ctx.lastHeaderReceived = lastHeader
 	return lastHeader, nil

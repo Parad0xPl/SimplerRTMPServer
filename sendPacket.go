@@ -44,5 +44,6 @@ func sendPacket(c net.Conn, ctx *ConnectionSettings, header Header, body []byte)
 	}
 	ctx.lastHeaderSended = &header
 	buffer.Write(body)
+	ctx.SizeWrote += buffer.Len()
 	c.Write(buffer.Bytes())
 }

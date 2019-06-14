@@ -17,6 +17,8 @@ type ConnectionSettings struct {
 	initTime           uint32
 	lastHeaderReceived Header
 	lastHeaderSended   *Header
+	SizeRead           int
+	SizeWrote          int
 	Properties         *map[string]interface{}
 }
 
@@ -52,6 +54,7 @@ func handler(c net.Conn) {
 
 	for {
 		headers, err := getHeaders(c, &settings)
+		settings.SizeRead += headers.Size
 		log.Println("Headers", headers)
 		if err != nil {
 			log.Println(err)
@@ -59,6 +62,7 @@ func handler(c net.Conn) {
 		}
 		data := make([]byte, headers.MessageLength)
 		_, err = c.Read(data)
+		settings.SizeRead += headers.MessageLength
 		if err != nil {
 			log.Println("Error while reading body", err)
 			return
