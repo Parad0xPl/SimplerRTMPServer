@@ -122,13 +122,19 @@ func (create) UCMPingRequest(timestamp int) (Header, []byte) {
 	return head, body
 }
 
-func (create) UCMPingResponse(timestamp int) (Header, []byte) {
+func (create) UCMPingResponse(timestamp interface{}) (Header, []byte) {
 	head := Header{
 		TypeID:   4,
 		StreamID: 0,
 		ChunkID:  2,
 	}
-	body, _ := build.Body.UCM(7, utils.WriteInt(timestamp, 4))
+	var body []byte
+	switch v := timestamp.(type) {
+	case int:
+		body, _ = build.Body.UCM(7, utils.WriteInt(v, 4))
+	case []byte:
+		body, _ = build.Body.UCM(7, v)
+	}
 	return head, body
 }
 
