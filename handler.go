@@ -11,8 +11,8 @@ func getTime() uint32 {
 	return uint32(time.Now().UnixNano() / 1000)
 }
 
-// ConnectionSettings Structure for stream data and settings
-type ConnectionSettings struct {
+// ConnContext Structure for stream data and settings
+type ConnContext struct {
 	ChunkSize                   int
 	initTime                    uint32
 	lastHeaderReceived          Header
@@ -26,20 +26,15 @@ type ConnectionSettings struct {
 	PeerBandwidthType           int
 }
 
-// PacketData data
-type PacketData struct {
-	bytes []byte
-}
-
 // Packet wrapper for all packet related data
 type Packet struct {
-	ctx    *ConnectionSettings
+	ctx    *ConnContext
 	header *Header
-	data   *PacketData
+	data   []byte // Should work as long any handler won't try append to slice
 }
 
-func initSettings() ConnectionSettings {
-	return ConnectionSettings{
+func initCTX() ConnContext {
+	return ConnContext{
 		ChunkSize:                   128,
 		initTime:                    getTime(),
 		ServerWindowAcknowledgement: 2500000,
@@ -50,8 +45,9 @@ func initSettings() ConnectionSettings {
 func handler(c net.Conn) {
 	defer c.Close()
 	fmt.Printf("Connection started: %s\n", c.RemoteAddr().String())
-	settings := initSettings()
+	ctx := initCTX()
 
+	// Handle handshake
 	err := handshake(c)
 	if err != nil {
 		log.Println(err)
@@ -59,31 +55,28 @@ func handler(c net.Conn) {
 	}
 
 	for {
-		headers, err := getHeaders(c, &settings)
-		settings.SizeRead += headers.Size
-		log.Println("Headers", headers)
+		header, err := getHeader(c, &ctx)
+		ctx.SizeRead += header.Size
+		log.Println("Headers", header)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		data := make([]byte, headers.MessageLength)
+		data := make([]byte, header.MessageLength)
 		_, err = c.Read(data)
-		settings.SizeRead += headers.MessageLength
+		ctx.SizeRead += header.MessageLength
 		if err != nil {
 			log.Println("Error while reading body", err)
 			return
 		}
 
-		packetData := PacketData{
-			bytes: data,
+		packet := Packet{
+			&ctx,
+			&header,
+			data,
 		}
 
-		packet := Packet{
-			&settings,
-			&headers,
-			&packetData,
-		}
-		if headers.ChunkID == 2 && headers.StreamID == 0 {
+		if header.ChunkID == 2 && header.StreamID == 0 {
 			// Take effect when received
 			err = handlePCM(packet, c)
 			if err != nil {
@@ -91,7 +84,7 @@ func handler(c net.Conn) {
 				return
 			}
 		} else {
-			switch headers.TypeID {
+			switch header.TypeID {
 			case 4:
 				// TODO handleUCM
 				err = handleUCM(packet, c)

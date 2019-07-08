@@ -72,8 +72,8 @@ func getExtandedTime(c net.Conn) (int, error) {
 	return utils.ReadInt(tmp), nil
 }
 
-// getHeaders get header of RTMP chunk as specified in documentation(docs.pdf)
-func getHeaders(c net.Conn, ctx *ConnectionSettings) (Header, error) {
+// getHeader get header of RTMP chunk as specified in documentation(docs.pdf)
+func getHeader(c net.Conn, ctx *ConnContext) (Header, error) {
 	// Read first byte with fmt and begin of chunk stream
 	size := 0
 	firstbyte := make([]byte, 1)
