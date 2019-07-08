@@ -95,18 +95,48 @@ func handleCmd(packet Packet, c net.Conn, raw []interface{}) error {
 		fmt.Println("FCPublish:", name)
 	case "createStream":
 		streamID := streamsMan.createStream()
+		packet.ctx.StreamID = streamID
 		pkt := Create.resultMessage(int(command.TransactionID), nil, streamID)
 		sendPacket(c, packet.ctx, pkt)
 
 	case "play":
-		_, err := parseCMDPlayParameters(raw[3:])
+		params, err := parseCMDPlayParameters(raw[3:])
 		if err != nil {
 			return err
 		}
 		pkt := Create.PCMSetChunkSize(packet.ctx.ChunkSize)
 		sendPacket(c, packet.ctx, pkt)
-	case "play2":
+		pkt = Create.UCMStreamIsRecorded(int(packet.ctx.StreamID))
+		sendPacket(c, packet.ctx, pkt)
+		pkt = Create.UCMStreamBegin(int(packet.ctx.StreamID))
+		sendPacket(c, packet.ctx, pkt)
+		pkt = Create.onStatusMessage("status", "NetStream.Play.Start", "Play stream")
+		if params.Reset {
+			sendPacket(c, packet.ctx, pkt)
+			pkt = Create.onStatusMessage("status", "NetStream.Play.Reset", "Reset stream")
+		}
+	case "publish":
+		name, ok := raw[3].(string)
+		if !ok {
+			return errors.New("Publishing Name is not string")
+		}
 
+		pubtype, ok := raw[4].(string)
+		if !ok {
+			return errors.New("Publishing Type is not string")
+		}
+
+		if pubtype != "live" {
+			return errors.New("SimplerRTMPServer doesn't support other type than livestriming")
+		}
+
+		err := streamsMan.publish(packet.ctx.StreamID, name)
+		if err != nil {
+			return err
+		}
+
+		pkt := Create.onStatusMessage("status", "NetStream.Publish.Start", "Started publishing stream")
+		sendPacket(c, packet.ctx, pkt)
 	}
 
 	return nil

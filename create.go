@@ -172,3 +172,17 @@ func (create) errorMessage(transID int, props, infos interface{}) PacketProt {
 	packet := Create.commandMessage(raw)
 	return packet
 }
+
+func (create) onStatusMessage(level, code, desc string) PacketProt {
+	raw := make([]interface{}, 4)
+	raw[0] = "onStatus"
+	raw[1] = 0
+	raw[2] = nil
+	raw[3] = map[string]interface{}{
+		"level":       level,
+		"code":        code,
+		"description": desc,
+	}
+	packet := Create.commandMessage(raw)
+	return packet
+}

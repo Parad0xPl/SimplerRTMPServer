@@ -24,6 +24,8 @@ type ConnContext struct {
 	ClientWindowAcknowledgement int
 	PeerBandwidth               int
 	PeerBandwidthType           int
+
+	StreamID uint
 }
 
 // Packet wrapper for all packet related data
