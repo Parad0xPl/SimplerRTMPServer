@@ -156,3 +156,13 @@ func (create) resultMessage(transID int, props, infos interface{}) (Header, []by
 	head, body := Create.commandMessage(raw)
 	return head, body
 }
+
+func (create) errorMessage(transID int, props, infos interface{}) (Header, []byte) {
+	raw := make([]interface{}, 4)
+	raw[0] = "_error"
+	raw[1] = transID
+	raw[2] = props
+	raw[3] = infos
+	head, body := Create.commandMessage(raw)
+	return head, body
+}

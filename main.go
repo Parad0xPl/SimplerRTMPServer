@@ -10,6 +10,8 @@ func main() {
 
 	options := initFlags()
 
+	initStrMan()
+
 	err := serve(options.port, handler)
 	if err != nil {
 		log.Fatalln(err)
