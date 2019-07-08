@@ -22,7 +22,9 @@ func checkType2(h, o Header) bool {
 	return true
 }
 
-func sendPacket(c net.Conn, ctx *ConnContext, header Header, body []byte) {
+func sendPacket(c net.Conn, ctx *ConnContext, pkt PacketProt) {
+	header := pkt.head
+	body := pkt.body
 	buffer := new(bytes.Buffer)
 	messLen := len(body)
 	header.MessageLength = messLen

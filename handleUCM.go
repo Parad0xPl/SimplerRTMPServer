@@ -35,8 +35,8 @@ func handleUCM(packet Packet, c net.Conn) error {
 		utils.ReadInt(packet.data[2:6])
 	case 6:
 		// PingRequest
-		head, body := Create.UCMPingResponse(packet.data[2:6])
-		sendPacket(c, packet.ctx, head, body)
+		pkt := Create.UCMPingResponse(packet.data[2:6])
+		sendPacket(c, packet.ctx, pkt)
 	case 7:
 		// PingResponse
 		// Only client

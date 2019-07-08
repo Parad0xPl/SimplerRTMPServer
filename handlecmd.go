@@ -9,15 +9,15 @@ import (
 )
 
 func handleCmdConnect(packet Packet, c net.Conn, cmd utils.Command) {
-	head, body := Create.PCMWindowAckSize(packet.ctx.ServerWindowAcknowledgement)
-	sendPacket(c, packet.ctx, head, body)
-	head, body = Create.PCMSetPeerBandwitdh(packet.ctx.PeerBandwidth, 1)
-	sendPacket(c, packet.ctx, head, body)
+	pkt := Create.PCMWindowAckSize(packet.ctx.ServerWindowAcknowledgement)
+	sendPacket(c, packet.ctx, pkt)
+	pkt = Create.PCMSetPeerBandwitdh(packet.ctx.PeerBandwidth, 1)
+	sendPacket(c, packet.ctx, pkt)
 	streamID := streamsMan.createStream()
-	head, body = Create.UCMStreamBegin(int(streamID))
-	sendPacket(c, packet.ctx, head, body)
-	head, body = Create.resultMessage(int(cmd.TransactionID), nil, amf0.Undefined{})
-	sendPacket(c, packet.ctx, head, body)
+	pkt = Create.UCMStreamBegin(int(streamID))
+	sendPacket(c, packet.ctx, pkt)
+	pkt = Create.resultMessage(int(cmd.TransactionID), nil, amf0.Undefined{})
+	sendPacket(c, packet.ctx, pkt)
 }
 
 // CMDPlayParameters _
@@ -95,16 +95,16 @@ func handleCmd(packet Packet, c net.Conn, raw []interface{}) error {
 		fmt.Println("FCPublish:", name)
 	case "createStream":
 		streamID := streamsMan.createStream()
-		head, body := Create.resultMessage(int(command.TransactionID), nil, streamID)
-		sendPacket(c, packet.ctx, head, body)
+		pkt := Create.resultMessage(int(command.TransactionID), nil, streamID)
+		sendPacket(c, packet.ctx, pkt)
 
 	case "play":
 		_, err := parseCMDPlayParameters(raw[3:])
 		if err != nil {
 			return err
 		}
-		head, body := Create.PCMSetChunkSize(packet.ctx.ChunkSize)
-		sendPacket(c, packet.ctx, head, body)
+		pkt := Create.PCMSetChunkSize(packet.ctx.ChunkSize)
+		sendPacket(c, packet.ctx, pkt)
 	case "play2":
 
 	}
