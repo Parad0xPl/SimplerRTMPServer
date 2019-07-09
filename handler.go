@@ -1,7 +1,6 @@
 package main
 
 import (
-	"SimpleRTMPServer/utils"
 	"fmt"
 	"log"
 	"net"
@@ -35,6 +34,41 @@ type ConnContext struct {
 	StreamID uint
 }
 
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func (ctx ConnContext) read() (Header, []byte, error) {
+	header, err := getHeader(&ctx)
+	if err != nil {
+		return Header{}, []byte{}, err
+	}
+	dataToRead := header.MessageLength
+	offset := 0
+	chunkLen := min(dataToRead, ctx.ChunkSize)
+	body := make([]byte, header.MessageLength)
+	tmp := make([]byte, chunkLen)
+	for {
+		_, err = ctx.conn.Read(tmp[:chunkLen])
+		if err != nil {
+			return Header{}, []byte{}, err
+		}
+		offset += copy(body[offset:], tmp)
+		chunkLen = min(dataToRead-offset, ctx.ChunkSize)
+		if dataToRead-offset <= 0 {
+			break
+		}
+		header, err = getHeader(&ctx)
+		if err != nil {
+			return Header{}, []byte{}, err
+		}
+	}
+	return header, body, nil
+}
+
 // ReceivedPacket wrapper for all packet related data
 type ReceivedPacket struct {
 	ctx    *ConnContext
@@ -65,33 +99,39 @@ func handler(conn net.Conn) {
 	}
 
 	for {
-		header, err := getHeader(&ctx)
-		ctx.SizeRead += header.Size
-		log.Println("Headers", header)
+		// header, err := getHeader(&ctx)
+		// ctx.SizeRead += header.Size
+		// log.Println("Headers", header)
+		// if err != nil {
+		// 	log.Println(err)
+		// 	return
+		// }
+		// data := make([]byte, header.MessageLength)
+		// n, err := conn.Read(data)
+		// ctx.SizeRead += n
+		// if err != nil {
+		// 	log.Println("Error while reading body", err)
+		// 	return
+		// }
+
+		header, data, err := ctx.read()
 		if err != nil {
-			log.Println(err)
-			return
-		}
-		data := make([]byte, header.MessageLength)
-		n, err := conn.Read(data)
-		ctx.SizeRead += n
-		if err != nil {
-			log.Println("Error while reading body", err)
+			log.Println("Error while reading Packet", err)
 			return
 		}
 
-		//Magic byte fix
-		if n > 0x80 {
-			if data[0x80] == 0xc3 {
-				b := make([]byte, 1)
-				_, err := conn.Read(b)
-				if err != nil {
-					log.Println("Error while reading missing byte", err)
-					return
-				}
-				data = utils.Concat(data[:0x80], data[0x81:], b)
-			}
-		}
+		// //Magic byte fix
+		// if n > 0x80 {
+		// 	if data[0x80] == 0xc3 {
+		// 		b := make([]byte, 1)
+		// 		_, err := conn.Read(b)
+		// 		if err != nil {
+		// 			log.Println("Error while reading missing byte", err)
+		// 			return
+		// 		}
+		// 		data = utils.Concat(data[:0x80], data[0x81:], b)
+		// 	}
+		// }
 
 		packet := ReceivedPacket{
 			&ctx,
