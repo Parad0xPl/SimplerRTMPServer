@@ -3,7 +3,6 @@ package main
 import (
 	"SimpleRTMPServer/build"
 	"bytes"
-	"net"
 )
 
 func checkType1(h, o Header) bool {
@@ -22,7 +21,7 @@ func checkType2(h, o Header) bool {
 	return true
 }
 
-func sendPacket(c net.Conn, ctx *ConnContext, pkt PacketProt) {
+func sendPacket(ctx *ConnContext, pkt PacketProt) {
 	header := pkt.head
 	body := pkt.body
 	buffer := new(bytes.Buffer)
@@ -47,5 +46,5 @@ func sendPacket(c net.Conn, ctx *ConnContext, pkt PacketProt) {
 	ctx.lastHeaderSended = &header
 	buffer.Write(body)
 	ctx.SizeWrote += buffer.Len()
-	c.Write(buffer.Bytes())
+	ctx.conn.Write(buffer.Bytes())
 }

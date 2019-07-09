@@ -63,9 +63,9 @@ func (h Header) String() string {
 	return str.String()
 }
 
-func getExtandedTime(c net.Conn) (int, error) {
+func getExtandedTime(conn net.Conn) (int, error) {
 	tmp := make([]byte, 4)
-	n, err := c.Read(tmp)
+	n, err := conn.Read(tmp)
 	if n != 4 || err != nil {
 		return 0, errors.New("Problem with extanded time")
 	}
@@ -73,12 +73,12 @@ func getExtandedTime(c net.Conn) (int, error) {
 }
 
 // getHeader get header of RTMP chunk as specified in documentation(docs.pdf)
-func getHeader(c net.Conn, ctx *ConnContext) (Header, error) {
+func getHeader(ctx *ConnContext) (Header, error) {
 	// Read first byte with fmt and begin of chunk stream
 	size := 0
 	firstbyte := make([]byte, 1)
 	var err error
-	_, err = c.Read(firstbyte)
+	_, err = ctx.conn.Read(firstbyte)
 	size++
 	if err != nil {
 		return Header{}, err
@@ -94,7 +94,7 @@ func getHeader(c net.Conn, ctx *ConnContext) (Header, error) {
 	if firstbyte[0] == 0 {
 		// 2 bytes long
 		tmp = make([]byte, 1)
-		_, err = c.Read(tmp)
+		_, err = ctx.conn.Read(tmp)
 		size++
 		if err != nil {
 			return Header{}, err
@@ -104,7 +104,7 @@ func getHeader(c net.Conn, ctx *ConnContext) (Header, error) {
 	} else if firstbyte[0] == 1 {
 		// 3 bytes long
 		tmp = make([]byte, 2)
-		_, err = c.Read(tmp)
+		_, err = ctx.conn.Read(tmp)
 		size += 2
 		if err != nil {
 			return Header{}, err
@@ -128,14 +128,14 @@ func getHeader(c net.Conn, ctx *ConnContext) (Header, error) {
 		// 11 bytes long
 		// Full data passed in header
 		tmp = make([]byte, 11)
-		_, err = c.Read(tmp)
+		_, err = ctx.conn.Read(tmp)
 		size += 11
 		if err != nil {
 			return Header{}, err
 		}
 		timestamp = utils.ReadInt(tmp[0:3])
 		if ^timestamp == 0 {
-			t, err := getExtandedTime(c)
+			t, err := getExtandedTime(ctx.conn)
 			size += 4
 			if err != nil {
 				return Header{}, err
@@ -151,14 +151,14 @@ func getHeader(c net.Conn, ctx *ConnContext) (Header, error) {
 		// Streamid is sipped
 		// Timedelta instead of time
 		tmp = make([]byte, 7)
-		_, err = c.Read(tmp)
+		_, err = ctx.conn.Read(tmp)
 		size += 7
 		if err != nil {
 			return Header{}, err
 		}
 		timestamp = utils.ReadInt(tmp[0:3])
 		if ^timestamp == 0 {
-			t, err := getExtandedTime(c)
+			t, err := getExtandedTime(ctx.conn)
 			size += 4
 			if err != nil {
 				return Header{}, err
@@ -174,7 +174,7 @@ func getHeader(c net.Conn, ctx *ConnContext) (Header, error) {
 		// 3 bytes long
 		// Only timedelta is given
 		tmp = make([]byte, 3)
-		_, err = c.Read(tmp)
+		_, err = ctx.conn.Read(tmp)
 		size += 3
 		if err != nil {
 			return Header{}, err
@@ -182,7 +182,7 @@ func getHeader(c net.Conn, ctx *ConnContext) (Header, error) {
 		timestamp = utils.ReadInt(tmp[0:3])
 		if ^timestamp == 0 {
 			size += 4
-			t, err := getExtandedTime(c)
+			t, err := getExtandedTime(ctx.conn)
 			if err != nil {
 				return Header{}, err
 			}
@@ -199,7 +199,7 @@ func getHeader(c net.Conn, ctx *ConnContext) (Header, error) {
 		timestamp = ctx.lastHeaderReceived.Timestamp
 		if ^timestamp == 0 {
 			size += 4
-			t, err := getExtandedTime(c)
+			t, err := getExtandedTime(ctx.conn)
 			if err != nil {
 				return Header{}, err
 			}

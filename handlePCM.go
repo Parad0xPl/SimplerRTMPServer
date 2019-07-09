@@ -5,11 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net"
 )
 
 // handlePCM Handle 'Protocol Control Messages'
-func handlePCM(packet Packet, c net.Conn) error {
+func handlePCM(packet ReceivedPacket) error {
 	log.Println("PCM Packet")
 	head := packet.header
 	ctx := packet.ctx

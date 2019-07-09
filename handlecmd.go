@@ -5,19 +5,18 @@ import (
 	"SimpleRTMPServer/utils"
 	"errors"
 	"fmt"
-	"net"
 )
 
-func handleCmdConnect(packet Packet, c net.Conn, cmd utils.Command) {
+func handleCmdConnect(packet ReceivedPacket, cmd utils.Command) {
 	pkt := Create.PCMWindowAckSize(packet.ctx.ServerWindowAcknowledgement)
-	sendPacket(c, packet.ctx, pkt)
+	sendPacket(packet.ctx, pkt)
 	pkt = Create.PCMSetPeerBandwitdh(packet.ctx.PeerBandwidth, 1)
-	sendPacket(c, packet.ctx, pkt)
+	sendPacket(packet.ctx, pkt)
 	streamID := streamsMan.createStream()
 	pkt = Create.UCMStreamBegin(int(streamID))
-	sendPacket(c, packet.ctx, pkt)
+	sendPacket(packet.ctx, pkt)
 	pkt = Create.resultMessage(int(cmd.TransactionID), nil, amf0.Undefined{})
-	sendPacket(c, packet.ctx, pkt)
+	sendPacket(packet.ctx, pkt)
 }
 
 // CMDPlayParameters _
@@ -67,7 +66,7 @@ func parseCMDPlayParameters(raw []interface{}) (CMDPlayParameters, error) {
 	}, nil
 }
 
-func handleCmd(packet Packet, c net.Conn, raw []interface{}) error {
+func handleCmd(packet ReceivedPacket, raw []interface{}) error {
 	command, err := utils.ParseCommand(raw)
 	if err != nil {
 		return err
@@ -79,7 +78,7 @@ func handleCmd(packet Packet, c net.Conn, raw []interface{}) error {
 		if ok {
 			packet.ctx.Properties = &cmdObj
 		}
-		handleCmdConnect(packet, c, command)
+		handleCmdConnect(packet, command)
 	case "releaseStream":
 		name, ok := raw[3].(string)
 		if !ok {
@@ -97,7 +96,7 @@ func handleCmd(packet Packet, c net.Conn, raw []interface{}) error {
 		streamID := streamsMan.createStream()
 		packet.ctx.StreamID = streamID
 		pkt := Create.resultMessage(int(command.TransactionID), nil, streamID)
-		sendPacket(c, packet.ctx, pkt)
+		sendPacket(packet.ctx, pkt)
 
 	case "play":
 		params, err := parseCMDPlayParameters(raw[3:])
@@ -105,14 +104,14 @@ func handleCmd(packet Packet, c net.Conn, raw []interface{}) error {
 			return err
 		}
 		pkt := Create.PCMSetChunkSize(packet.ctx.ChunkSize)
-		sendPacket(c, packet.ctx, pkt)
+		sendPacket(packet.ctx, pkt)
 		pkt = Create.UCMStreamIsRecorded(int(packet.ctx.StreamID))
-		sendPacket(c, packet.ctx, pkt)
+		sendPacket(packet.ctx, pkt)
 		pkt = Create.UCMStreamBegin(int(packet.ctx.StreamID))
-		sendPacket(c, packet.ctx, pkt)
+		sendPacket(packet.ctx, pkt)
 		pkt = Create.onStatusMessage("status", "NetStream.Play.Start", "Play stream")
 		if params.Reset {
-			sendPacket(c, packet.ctx, pkt)
+			sendPacket(packet.ctx, pkt)
 			pkt = Create.onStatusMessage("status", "NetStream.Play.Reset", "Reset stream")
 		}
 	case "publish":
@@ -136,7 +135,7 @@ func handleCmd(packet Packet, c net.Conn, raw []interface{}) error {
 		}
 
 		pkt := Create.onStatusMessage("status", "NetStream.Publish.Start", "Started publishing stream")
-		sendPacket(c, packet.ctx, pkt)
+		sendPacket(packet.ctx, pkt)
 	}
 
 	return nil

@@ -2,11 +2,10 @@ package main
 
 import (
 	"SimpleRTMPServer/utils"
-	"net"
 )
 
 // handleUCM Handle 'User Control Messages'
-func handleUCM(packet Packet, c net.Conn) error {
+func handleUCM(packet ReceivedPacket) error {
 	// WHOLE TODO [PAGE 23]
 	eventType := utils.ReadInt(packet.data[0:2])
 
@@ -36,7 +35,7 @@ func handleUCM(packet Packet, c net.Conn) error {
 	case 6:
 		// PingRequest
 		pkt := Create.UCMPingResponse(packet.data[2:6])
-		sendPacket(c, packet.ctx, pkt)
+		sendPacket(packet.ctx, pkt)
 	case 7:
 		// PingResponse
 		// Only client

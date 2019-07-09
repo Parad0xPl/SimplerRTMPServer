@@ -10,11 +10,11 @@ import (
 	"net"
 )
 
-func handshake(c net.Conn) error {
+func handshake(conn net.Conn) error {
 
 	// Read c0
 	c0 := make([]byte, 1)
-	n, err := c.Read(c0)
+	n, err := conn.Read(c0)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -27,7 +27,7 @@ func handshake(c net.Conn) error {
 	}
 
 	// Write s0
-	_, err = c.Write([]byte{3})
+	_, err = conn.Write([]byte{3})
 	if err != nil {
 		return err
 	}
@@ -39,14 +39,14 @@ func handshake(c net.Conn) error {
 	for i := 0; i < 4; i++ {
 		s1[4+i] = 0
 	}
-	_, err = c.Write(s1)
+	_, err = conn.Write(s1)
 	if err != nil {
 		return err
 	}
 
 	// Read c1
 	c1 := make([]byte, 1536)
-	n, err = c.Read(c1)
+	n, err = conn.Read(c1)
 	if err != nil {
 		return err
 	}
@@ -59,14 +59,14 @@ func handshake(c net.Conn) error {
 	}
 
 	// Send s2
-	_, err = c.Write(c1)
+	_, err = conn.Write(c1)
 	if err != nil {
 		return err
 	}
 
 	// Read c2
 	c2 := make([]byte, 1536)
-	n, err = c.Read(c2)
+	n, err = conn.Read(c2)
 	if err != nil {
 		return err
 	}
