@@ -103,7 +103,7 @@ func (create) UCMSetBufferLength(streamID, bufflen int) PacketProt {
 		StreamID: 0,
 		ChunkID:  2,
 	}
-	eventData := append(utils.WriteInt(streamID, 4), utils.WriteInt(bufflen, 4)...)
+	eventData := utils.Concat(utils.WriteInt(streamID, 4), utils.WriteInt(bufflen, 4))
 	body, _ := build.Body.UCM(3, eventData)
 	return PacketProt{head, body}
 }

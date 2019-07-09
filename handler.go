@@ -1,6 +1,7 @@
 package main
 
 import (
+	"SimpleRTMPServer/utils"
 	"fmt"
 	"log"
 	"net"
@@ -65,11 +66,24 @@ func handler(c net.Conn) {
 			return
 		}
 		data := make([]byte, header.MessageLength)
-		_, err = c.Read(data)
-		ctx.SizeRead += header.MessageLength
+		n, err := c.Read(data)
+		ctx.SizeRead += n
 		if err != nil {
 			log.Println("Error while reading body", err)
 			return
+		}
+
+		//Magic byte fix
+		if n > 0x80 {
+			if data[0x80] == 0xc3 {
+				b := make([]byte, 1)
+				_, err := c.Read(b)
+				if err != nil {
+					log.Println("Error while reading missing byte", err)
+					return
+				}
+				data = utils.Concat(data[:0x80], data[0x81:], b)
+			}
 		}
 
 		packet := Packet{
