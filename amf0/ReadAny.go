@@ -16,6 +16,8 @@ func ReadAny(data []byte) (interface{}, int) {
 	case 5:
 		tmp = nil
 		n = 0
+	case 8:
+		tmp, n = ReadECMAArray(data[1:])
 	default:
 		return nil, 1
 	}
