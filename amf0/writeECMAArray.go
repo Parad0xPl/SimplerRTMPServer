@@ -9,6 +9,13 @@ type ECMAArray struct {
 	data map[string]interface{}
 }
 
+// CreateECMAArray _
+func CreateECMAArray(data map[string]interface{}) ECMAArray {
+	return ECMAArray{
+		data,
+	}
+}
+
 // WriteECAMArray _
 func WriteECAMArray(data map[string]interface{}) []byte {
 	rawlen := len(data)
