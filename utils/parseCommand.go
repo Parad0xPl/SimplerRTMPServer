@@ -6,7 +6,7 @@ import "errors"
 type Command struct {
 	Name          string
 	TransactionID float64
-	CMDObject     *map[string]interface{}
+	CMDObject     map[string]interface{}
 }
 
 // ParseCommand TODO doc
@@ -29,9 +29,9 @@ func ParseCommand(raw []interface{}) (Command, error) {
 
 	objraw, ok := raw[2].(map[string]interface{})
 	if ok {
-		tmp.CMDObject = &objraw
+		tmp.CMDObject = objraw
 	} else {
-		tmp.CMDObject = nil
+		tmp.CMDObject = make(map[string]interface{})
 	}
 	return tmp, nil
 }
