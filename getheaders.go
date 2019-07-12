@@ -90,7 +90,8 @@ func getHeader(ctx *ConnContext) (Header, error) {
 	var chunkid int
 	var tmp []byte
 	// Handling possible lengths
-	if firstbyte[0] == 0 {
+	switch firstbyte[0] {
+	case 0:
 		// 2 bytes long
 		tmp = make([]byte, 1)
 		_, err = ctx.Read(tmp)
@@ -100,7 +101,7 @@ func getHeader(ctx *ConnContext) (Header, error) {
 		}
 		chunkid = utils.ReadInt(tmp)
 		chunkid += 64
-	} else if firstbyte[0] == 1 {
+	case 1:
 		// 3 bytes long
 		tmp = make([]byte, 2)
 		_, err = ctx.Read(tmp)
@@ -110,10 +111,8 @@ func getHeader(ctx *ConnContext) (Header, error) {
 		}
 		chunkid = utils.ReadInt(tmp)
 		chunkid += 64
-	} else if firstbyte[0] == 2 {
-		// Reserved for low-level protocol control messages and commands
-		chunkid = int(firstbyte[0])
-	} else {
+	default:
+		// 2 is reserved for low-level protocol control messages and commands
 		chunkid = int(firstbyte[0])
 	}
 
@@ -122,7 +121,8 @@ func getHeader(ctx *ConnContext) (Header, error) {
 	messlength = -1
 	typeid = -1
 	streamid = -1
-	if format == 0 {
+	switch format {
+	case 0:
 		// Type 0
 		// 11 bytes long
 		// Full data passed in header
@@ -144,7 +144,7 @@ func getHeader(ctx *ConnContext) (Header, error) {
 		messlength = utils.ReadInt(tmp[3:6])
 		typeid = int(tmp[6])
 		streamid = utils.ReadInt(tmp[7:])
-	} else if format == 1 {
+	case 1:
 		// Type 1
 		// 7 bytes long
 		// Streamid is sipped
@@ -168,7 +168,7 @@ func getHeader(ctx *ConnContext) (Header, error) {
 		messlength = utils.ReadInt(tmp[3:6])
 		typeid = int(tmp[6])
 		streamid = ctx.lastHeaderReceived.StreamID
-	} else if format == 2 {
+	case 2:
 		// Type 2
 		// 3 bytes long
 		// Only timedelta is given
@@ -192,7 +192,7 @@ func getHeader(ctx *ConnContext) (Header, error) {
 		messlength = ctx.lastHeaderReceived.MessageLength
 		typeid = ctx.lastHeaderReceived.TypeID
 
-	} else if format == 3 {
+	case 3:
 		// Type 3
 		// Should use data from lastHeader
 		timestamp = ctx.lastHeaderReceived.Timestamp
