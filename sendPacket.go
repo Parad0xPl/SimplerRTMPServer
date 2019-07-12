@@ -46,5 +46,5 @@ func sendPacket(ctx *ConnContext, pkt PacketProt) {
 	ctx.lastHeaderSended = &header
 	buffer.Write(body)
 	ctx.SizeWrote += buffer.Len()
-	ctx.conn.Write(buffer.Bytes())
+	ctx.Write(buffer.Bytes())
 }
