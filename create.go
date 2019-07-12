@@ -186,3 +186,28 @@ func (create) onStatusMessage(level, code, desc string) PacketProt {
 	packet := Create.commandMessage(raw)
 	return packet
 }
+
+func (create) audiodata(chunkstreamid int, data []byte) PacketProt {
+	head := Header{
+		TypeID:  8,
+		ChunkID: chunkstreamid,
+	}
+	return PacketProt{head, data}
+}
+
+func (create) videodata(chunkstreamid int, data []byte) PacketProt {
+	head := Header{
+		TypeID:  9,
+		ChunkID: chunkstreamid,
+	}
+	return PacketProt{head, data}
+}
+
+func (create) amf0Data(chunkstreamid int, data []interface{}) PacketProt {
+	head := Header{
+		TypeID:  0x12,
+		ChunkID: chunkstreamid,
+	}
+	body := amf0.Write(data)
+	return PacketProt{head, body}
+}
