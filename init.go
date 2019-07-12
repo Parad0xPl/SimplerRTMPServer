@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"log"
 )
 
 // Options as flags` value
@@ -17,19 +16,16 @@ type Options struct {
 	dumpfileout     string // Attach file as net.Conn
 }
 
-func initFlags() Options {
-	log.Println("Initializing flags")
-	options := Options{}
+func (opts *Options) init() {
 
-	flag.IntVar(&options.port, "port", 1935, "RTMP port")
+	flag.IntVar(&opts.port, "port", 1935, "RTMP port")
 
-	flag.StringVar(&options.connfilein, "connfilein", "", "File attached as conn in (DEBUG function)")
-	flag.StringVar(&options.connfileout, "connfileout", "", "File attached as conn output (DEBUG function)")
+	flag.StringVar(&opts.connfilein, "connfilein", "", "File attached as conn in (DEBUG function)")
+	flag.StringVar(&opts.connfileout, "connfileout", "", "File attached as conn output (DEBUG function)")
 
-	options.dumpfilecounter = 0
-	flag.StringVar(&options.dumpfilein, "dumpfilein", "", "File to dump connection (DEBUG function)")
-	flag.StringVar(&options.dumpfileout, "dumpfileout", "", "File to dump connection (DEBUG function)")
+	opts.dumpfilecounter = 0
+	flag.StringVar(&opts.dumpfilein, "dumpfilein", "", "File to dump connection (DEBUG function)")
+	flag.StringVar(&opts.dumpfileout, "dumpfileout", "", "File to dump connection (DEBUG function)")
 
 	flag.Parse()
-	return options
 }

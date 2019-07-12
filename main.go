@@ -11,8 +11,7 @@ var options Options
 func main() {
 	fmt.Println("Starting SimpleRTMP Server")
 
-	options = initFlags()
-
+	options.init()
 	initStrMan()
 
 	if options.connfilein != "" &&
