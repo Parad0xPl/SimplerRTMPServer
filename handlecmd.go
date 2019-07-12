@@ -15,7 +15,7 @@ func sendError(packet ReceivedPacket, cmd utils.Command, desc string) {
 		"level":       "error",
 		"description": desc,
 	})
-	sendPacket(packet.ctx, pkt)
+	packet.ctx.sendPacket(pkt)
 }
 
 // Handlers
@@ -31,14 +31,14 @@ func handleCmdConnect(packet ReceivedPacket, cmd utils.Command) error {
 	packet.ctx.channel = streamsMan.channels[app]
 
 	pkt := Create.PCMWindowAckSize(packet.ctx.ServerWindowAcknowledgement)
-	sendPacket(packet.ctx, pkt)
+	packet.ctx.sendPacket(pkt)
 	pkt = Create.PCMSetPeerBandwitdh(packet.ctx.PeerBandwidth, 1)
-	sendPacket(packet.ctx, pkt)
+	packet.ctx.sendPacket(pkt)
 	streamID := streamsMan.createStream()
 	pkt = Create.UCMStreamBegin(int(streamID))
-	sendPacket(packet.ctx, pkt)
+	packet.ctx.sendPacket(pkt)
 	pkt = Create.resultMessage(int(cmd.TransactionID), nil, amf0.Undefined{})
-	sendPacket(packet.ctx, pkt)
+	packet.ctx.sendPacket(pkt)
 	return nil
 }
 
@@ -47,7 +47,7 @@ func handleCmdCreateStream(packet ReceivedPacket, cmd utils.Command) {
 	streamID := streamsMan.createStream()
 	packet.ctx.StreamID = streamID
 	pkt := Create.resultMessage(int(cmd.TransactionID), nil, streamID)
-	sendPacket(packet.ctx, pkt)
+	packet.ctx.sendPacket(pkt)
 }
 
 type cmdPlayParameters struct {
@@ -98,14 +98,14 @@ func parseCMDPlayParameters(raw []interface{}) (cmdPlayParameters, error) {
 
 func handleCmdPlay(packet ReceivedPacket, cmd utils.Command, params cmdPlayParameters) error {
 	pkt := Create.PCMSetChunkSize(packet.ctx.ChunkSize)
-	sendPacket(packet.ctx, pkt)
+	packet.ctx.sendPacket(pkt)
 	pkt = Create.UCMStreamIsRecorded(int(packet.ctx.StreamID))
-	sendPacket(packet.ctx, pkt)
+	packet.ctx.sendPacket(pkt)
 	pkt = Create.UCMStreamBegin(int(packet.ctx.StreamID))
-	sendPacket(packet.ctx, pkt)
+	packet.ctx.sendPacket(pkt)
 	pkt = Create.onStatusMessage("status", "NetStream.Play.Start", "Play stream")
 	if params.Reset {
-		sendPacket(packet.ctx, pkt)
+		packet.ctx.sendPacket(pkt)
 		pkt = Create.onStatusMessage("status", "NetStream.Play.Reset", "Reset stream")
 	}
 	if packet.ctx.channel.metadata != nil {
@@ -113,7 +113,7 @@ func handleCmdPlay(packet ReceivedPacket, cmd utils.Command, params cmdPlayParam
 			"onMetaData",
 			amf0.CreateECMAArray(packet.ctx.channel.metadata),
 		})
-		sendPacket(packet.ctx, pkt)
+		packet.ctx.sendPacket(pkt)
 		fmt.Println("Metadata has been send")
 	}
 	packet.ctx.channel.subscribe(packet.ctx)
@@ -156,7 +156,7 @@ func handleCmdPublish(packet ReceivedPacket, cmd utils.Command, params cmdPublis
 	packet.ctx.videoHandler = createVideoHandler(packet.ctx)
 
 	pkt := Create.onStatusMessage("status", "NetStream.Publish.Start", "Started publishing stream")
-	sendPacket(packet.ctx, pkt)
+	packet.ctx.sendPacket(pkt)
 	return nil
 }
 

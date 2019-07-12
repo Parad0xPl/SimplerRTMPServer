@@ -21,7 +21,7 @@ func checkType2(h, o Header) bool {
 	return true
 }
 
-func sendPacket(ctx *ConnContext, pkt PacketProt) {
+func (ctx *ConnContext) sendPacket(pkt PacketProt) {
 	header := pkt.head
 	body := pkt.body
 	buffer := new(bytes.Buffer)
