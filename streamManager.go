@@ -29,10 +29,10 @@ func (co *ChannelObject) verify(key string) bool {
 
 // StreamManager Object which manages streams
 type StreamManager struct {
-	topFreeID uint
-	db        map[uint]StreamObject
+	topFreeID int
+	db        map[int]StreamObject
 	channels  map[string]*ChannelObject
-	published map[string]uint
+	published map[string]int
 }
 
 func (sm *StreamManager) checkChannel(name string) bool {
@@ -50,19 +50,19 @@ func (sm *StreamManager) addChannel(name, key string) {
 	}
 }
 
-func (sm *StreamManager) createStream() uint {
+func (sm *StreamManager) createStream() int {
 	tmp := sm.topFreeID
 	sm.topFreeID++
 	sm.db[tmp] = StreamObject{}
 	return tmp
 }
 
-func (sm *StreamManager) checkid(id uint) bool {
+func (sm *StreamManager) checkid(id int) bool {
 	_, ok := sm.db[id]
 	return ok
 }
 
-func (sm *StreamManager) destroyStream(id uint) {
+func (sm *StreamManager) destroyStream(id int) {
 	if sm.checkid(id) {
 		delete(sm.db, id)
 	}
@@ -73,7 +73,7 @@ func (sm *StreamManager) checkname(name string) bool {
 	return ok
 }
 
-func (sm *StreamManager) publish(id uint, name string) error {
+func (sm *StreamManager) publish(id int, name string) error {
 	if sm.checkname(name) {
 		return errors.New("Name reserved")
 	}
@@ -92,10 +92,10 @@ var streamsMan StreamManager
 
 func initStrMan() {
 	streamsMan = StreamManager{
-		topFreeID: 3,
+		topFreeID: 10,
 	}
-	streamsMan.db = make(map[uint]StreamObject)
-	streamsMan.published = make(map[string]uint)
+	streamsMan.db = make(map[int]StreamObject)
+	streamsMan.published = make(map[string]int)
 	streamsMan.channels = make(map[string]*ChannelObject)
 
 	// Temporary static channel

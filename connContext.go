@@ -43,7 +43,7 @@ type ConnContext struct {
 	PeerBandwidth               int
 	PeerBandwidthType           int
 
-	StreamID uint
+	StreamID int
 }
 
 // Clear context before destructing

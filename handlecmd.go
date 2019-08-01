@@ -43,10 +43,13 @@ func handleCmdConnect(packet ReceivedPacket, cmd utils.Command) error {
 }
 
 func handleCmdCreateStream(packet ReceivedPacket, cmd utils.Command) {
-	log.Println("Create to string")
 	streamID := streamsMan.createStream()
 	packet.ctx.StreamID = streamID
-	pkt := Create.resultMessage(int(cmd.TransactionID), nil, streamID)
+	log.Println("Create stream:", streamID)
+	// streamID casted to uint as int create some strange behaviour
+	// TODO FIX: streamID is not added to result massage as uint isn't supported
+	// in amf0 parser. Didn't notice it, when fixed i couldn't connect with OBS
+	pkt := Create.resultMessage(int(cmd.TransactionID), nil, uint(streamID))
 	packet.ctx.sendPacket(pkt)
 }
 
