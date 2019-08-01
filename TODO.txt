@@ -1,0 +1,3 @@
+Check slices in amf parsers
+add error handling to amf parsers
+Ensure that ConnConnections are pointers
