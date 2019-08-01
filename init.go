@@ -20,12 +20,12 @@ func (opts *Options) init() {
 
 	flag.IntVar(&opts.port, "port", 1935, "RTMP port")
 
-	flag.StringVar(&opts.connfilein, "connfilein", "", "File attached as conn in (DEBUG function)")
-	flag.StringVar(&opts.connfileout, "connfileout", "", "File attached as conn output (DEBUG function)")
+	flag.StringVar(&opts.connfilein, "cfi", "", "File attached as conn in (DEBUG function)")
+	flag.StringVar(&opts.connfileout, "cfo", "", "File attached as conn output (DEBUG function)")
 
 	opts.dumpfilecounter = 0
-	flag.StringVar(&opts.dumpfilein, "dumpfilein", "", "File to dump connection (DEBUG function)")
-	flag.StringVar(&opts.dumpfileout, "dumpfileout", "", "File to dump connection (DEBUG function)")
+	flag.StringVar(&opts.dumpfilein, "dfi", "", "File to dump connection (DEBUG function)")
+	flag.StringVar(&opts.dumpfileout, "dfo", "", "File to dump connection (DEBUG function)")
 
 	flag.Parse()
 }
