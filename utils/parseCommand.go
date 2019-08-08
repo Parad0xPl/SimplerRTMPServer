@@ -12,24 +12,24 @@ type Command struct {
 // ParseCommand TODO doc
 func ParseCommand(raw []interface{}) (Command, error) {
 	if !(len(raw) >= 3) {
-		return Command{}, errors.New("Insufficient number of parameters")
+		return Command{}, errors.New("Insufficient number of parameters.")
 	}
 	var tmp Command
 	command, ok := raw[0].(string)
 	if !ok {
-		return Command{}, errors.New("Wrong format of command name")
+		return Command{}, errors.New("Wrong format of command name.")
 	}
 	tmp.Name = command
 
 	tid, ok := raw[1].(float64)
 	if !ok {
-		return Command{}, errors.New("Wrong format of transaction id")
+		return Command{}, errors.New("Wrong format of transaction id.")
 	}
 	tmp.TransactionID = tid
 
-	objraw, ok := raw[2].(map[string]interface{})
+	RawObj, ok := raw[2].(map[string]interface{})
 	if ok {
-		tmp.CMDObject = objraw
+		tmp.CMDObject = RawObj
 	} else {
 		tmp.CMDObject = make(map[string]interface{})
 	}

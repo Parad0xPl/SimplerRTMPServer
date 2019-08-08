@@ -8,60 +8,72 @@ import (
 
 // FileConn Structure to imitate file is incoming connection
 type FileConn struct {
-	inputadd   FileAddres
-	outputadd  FileAddres
-	inputfile  *os.File
-	outputfile *os.File
+	inAddress  FileAddress
+	outAddress FileAddress
+
+	inFile  *os.File
+	outFile *os.File
 }
 
-// FileAddres File Address
-type FileAddres struct {
+// FileAddress File Address
+type FileAddress struct {
 	filename string
 }
 
 // Network return networking type
-func (FileAddres) Network() string {
+func (FileAddress) Network() string {
 	return "file"
 }
 
-func (f FileAddres) String() string {
+func (f FileAddress) String() string {
 	return f.filename
 }
 
 // OpenFileConn Opens file to imitate net.Conn interface
-func OpenFileConn(inputfilename, outputfilename string) (FileConn, error) {
-	inputfile, err := os.Open(inputfilename)
+func OpenFileConn(inputfn, outputfn string) (FileConn, error) {
+	var inputFile, outputFile *os.File
+	var err error
+
+	inputFile, err = os.Open(inputfn)
 	if err != nil {
 		return FileConn{}, err
 	}
-	outputfile, err := os.OpenFile(outputfilename, os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		return FileConn{}, err
+
+	if outputfn != "" {
+		outputFile, err = os.OpenFile(outputfn, os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			return FileConn{}, err
+		}
 	}
+
 	return FileConn{
-		inputadd: FileAddres{
-			inputfilename,
+		inAddress: FileAddress{
+			inputfn,
 		},
-		outputadd: FileAddres{
-			outputfilename,
+		outAddress: FileAddress{
+			outputfn,
 		},
-		inputfile:  inputfile,
-		outputfile: outputfile,
+		inFile:  inputFile,
+		outFile: outputFile,
 	}, nil
 }
 
+func (f FileConn) Seek(offset int64, whence int) (n int64, err error) {
+	return f.inFile.Seek(offset, whence)
+}
+
 func (f FileConn) Read(b []byte) (n int, err error) {
-	return f.inputfile.Read(b)
+	return f.inFile.Read(b)
 }
 
 func (f FileConn) Write(b []byte) (n int, err error) {
-	return f.outputfile.Write(b)
+	return f.outFile.Write(b)
 }
 
 // Close closing file
 func (f FileConn) Close() error {
-	err := f.inputfile.Close()
-	err2 := f.outputfile.Close()
+	err := f.inFile.Close()
+	err2 := f.outFile.Close()
 	if err != nil {
 		return err
 	}
@@ -71,14 +83,14 @@ func (f FileConn) Close() error {
 	return nil
 }
 
-// LocalAddr return localaddress
+// LocalAddr return local address
 func (f FileConn) LocalAddr() net.Addr {
-	return f.outputadd
+	return f.outAddress
 }
 
 // RemoteAddr return addr with src filename
 func (f FileConn) RemoteAddr() net.Addr {
-	return f.inputadd
+	return f.inAddress
 }
 
 // SetDeadline do nothing

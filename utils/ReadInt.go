@@ -1,6 +1,6 @@
 package utils
 
-// ReadInt for protocol specifitcation
+// ReadInt for protocol specification
 func ReadInt(b []byte) int {
 	tmp := 0
 	blen := len(b)

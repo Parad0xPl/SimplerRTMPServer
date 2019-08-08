@@ -6,7 +6,7 @@ import (
 )
 
 func checkType1(h, o Header) bool {
-	if h.StreamID != o.StreamID {
+	if h.MessageStreamID != o.MessageStreamID {
 		return false
 	}
 	return true
@@ -15,36 +15,52 @@ func checkType1(h, o Header) bool {
 func checkType2(h, o Header) bool {
 	if h.MessageLength != o.MessageLength {
 		return false
-	} else if h.TypeID != o.TypeID {
+	} else if h.MessageTypeID != o.MessageTypeID {
 		return false
 	}
 	return true
 }
 
-func (ctx *ConnContext) sendPacket(pkt PacketProt) {
-	header := pkt.head
-	body := pkt.body
+func (ctx *ConnContext) sendChunk(pkt PacketPrototype) {
+	header := pkt.Head
+	body := pkt.Body
 	buffer := new(bytes.Buffer)
-	messLen := len(body)
-	header.MessageLength = messLen
-	if ctx.lastHeaderSended == nil {
-		buffer.Write(build.Header.Basic(0, header.ChunkID))
-		buffer.Write(build.Header.Type0(header.Timestamp, header.MessageLength, header.TypeID, header.StreamID))
-	} else if header.Compare(*ctx.lastHeaderSended) {
-		buffer.Write(build.Header.Basic(3, header.ChunkID))
-		buffer.Write(build.Header.Type3(header.Timestamp))
-	} else if checkType2(*ctx.lastHeaderSended, header) {
-		buffer.Write(build.Header.Basic(2, header.ChunkID))
-		buffer.Write(build.Header.Type2(header.Timestamp))
-	} else if checkType1(*ctx.lastHeaderSended, header) {
-		buffer.Write(build.Header.Basic(1, header.ChunkID))
-		buffer.Write(build.Header.Type1(header.Timestamp, header.MessageLength, header.TypeID))
+	// TODO: header type base on some hash of difference
+	// try to mark difference on exclusive bit
+	if ctx.LastHeaderSend == nil {
+		buffer.Write(build.Header.Basic(0, header.ChunkStreamID))
+		buffer.Write(build.Header.Type0(header.MessageTimestamp, header.MessageLength, header.MessageTypeID, header.MessageStreamID))
+	} else if header.Compare(*ctx.LastHeaderSend) {
+		buffer.Write(build.Header.Basic(3, header.ChunkStreamID))
+		buffer.Write(build.Header.Type3(header.MessageTimestamp))
+	} else if checkType2(*ctx.LastHeaderSend, header) {
+		buffer.Write(build.Header.Basic(2, header.ChunkStreamID))
+		buffer.Write(build.Header.Type2(header.MessageTimestamp))
+	} else if checkType1(*ctx.LastHeaderSend, header) {
+		buffer.Write(build.Header.Basic(1, header.ChunkStreamID))
+		buffer.Write(build.Header.Type1(header.MessageTimestamp, header.MessageLength, header.MessageTypeID))
 	} else {
-		buffer.Write(build.Header.Basic(0, header.ChunkID))
-		buffer.Write(build.Header.Type0(header.Timestamp, header.MessageLength, header.TypeID, header.StreamID))
+		buffer.Write(build.Header.Basic(0, header.ChunkStreamID))
+		buffer.Write(build.Header.Type0(header.MessageTimestamp, header.MessageLength, header.MessageTypeID, header.MessageStreamID))
 	}
-	ctx.lastHeaderSended = &header
+	ctx.LastHeaderSend = &header
 	buffer.Write(body)
-	ctx.SizeWrote += buffer.Len()
 	ctx.Write(buffer.Bytes())
+}
+
+func (ctx *ConnContext) sendPacket(pkt PacketPrototype) {
+	header := pkt.Head
+	body := pkt.Body
+	messLen := len(body)
+	if header.ChunkStreamID == 0 {
+		header.ChunkStreamID = ctx.ChunkStreamID
+		defer func() {
+			ctx.ChunkStreamID++
+		}()
+	}
+	header.MessageLength = messLen
+	header.MessageTimestamp = uint32(getTime() - uint64(ctx.InitTime))
+	for i := 0; i < messLen; i += ctx.ChunkSize {
+		ctx.sendChunk(PacketPrototype{header, body[i:min(i+ctx.ChunkSize, messLen)]})
+	}
 }

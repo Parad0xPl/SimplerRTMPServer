@@ -1,19 +1,23 @@
 package main
 
-func createAudioHandler(ctx *ConnContext) rawDataHandler {
+import "log"
+
+func createAudioHandler(ctx *ConnContext) RawDataHandler {
 	return func(data []byte) {
-		pkt := Create.audiodata(int(ctx.StreamID), data)
-		for _, v := range ctx.channel.subscribed {
+		pkt := Create.AudioData(data)
+		for _, v := range ctx.Channel.Subscribed {
 			v.sendPacket(pkt)
+			log.Println("Audio data send to client")
 		}
 	}
 }
 
-func createVideoHandler(ctx *ConnContext) rawDataHandler {
+func createVideoHandler(ctx *ConnContext) RawDataHandler {
 	return func(data []byte) {
-		pkt := Create.videodata(int(ctx.StreamID), data)
-		for _, v := range ctx.channel.subscribed {
+		pkt := Create.VideoData(data)
+		for _, v := range ctx.Channel.Subscribed {
 			v.sendPacket(pkt)
+			log.Println("Video data send to client")
 		}
 	}
 }

@@ -27,7 +27,7 @@ func (pcmbody) WindowAckSize(windowsize int) ([]byte, int) {
 	return utils.WriteInt(windowsize, 4), 4
 }
 
-func (pcmbody) SetPeerBandwitdh(windowsize, limittype int) ([]byte, int) {
+func (pcmbody) SetPeerBandwidth(windowsize, limittype int) ([]byte, int) {
 	buffer := new(bytes.Buffer)
 	buffer.Write(utils.WriteInt(windowsize, 4))
 	buffer.Write(utils.WriteInt(limittype, 1))

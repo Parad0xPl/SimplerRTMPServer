@@ -14,27 +14,28 @@ func min(a, b int) int {
 	return b
 }
 
-type rawDataHandler func([]byte)
+type RawDataHandler func([]byte)
 
 // ConnContext Structure for connection data and settings
 type ConnContext struct {
-	conn    net.Conn
-	channel *ChannelObject
+	Conn    net.Conn
+	Channel *ChannelObject
 
-	readDumpFile  *os.File
-	writeDumpFile *os.File
+	DumpFileForRead  *os.File
+	DumpFileForWrite *os.File
 
-	audioHandler rawDataHandler
-	videoHandler rawDataHandler
+	AudioHandler RawDataHandler
+	VideoHandler RawDataHandler
 
-	ChunkSize int
-	initTime  uint32
+	ChunkSize     int
+	InitTime      uint32
+	IsMetadataSet bool
 
-	lastHeaderReceived Header
-	lastHeaderSended   *Header
+	LastHeaderReceived Header
+	LastHeaderSend     *Header
 
-	SizeRead  int
-	SizeWrote int
+	AmountRead  int
+	AmountWrote int
 
 	Properties *map[string]interface{}
 
@@ -43,41 +44,49 @@ type ConnContext struct {
 	PeerBandwidth               int
 	PeerBandwidthType           int
 
-	StreamID int
+	ChunkStreamID int
+	NetStreamID   int
 }
 
 // Clear context before destructing
 func (ctx *ConnContext) Clear() {
-	if ctx.readDumpFile != nil {
-		ctx.readDumpFile.Close()
+	if ctx.DumpFileForRead != nil {
+		ctx.DumpFileForRead.Close()
 	}
-	if ctx.writeDumpFile != nil {
-		ctx.writeDumpFile.Close()
+	if ctx.DumpFileForWrite != nil {
+		ctx.DumpFileForWrite.Close()
 	}
-	ctx.conn.Close()
+	if ctx.IsMetadataSet {
+		ctx.Channel.Metadata = nil
+	}
+	ctx.Conn.Close()
 }
 
-// Read Proxy for ctx.conn.Read
+// Read Proxy for CTX.Conn.Read
 func (ctx ConnContext) Read(b []byte) (int, error) {
-	n, err := ctx.conn.Read(b)
-	if ctx.readDumpFile != nil {
-		ctx.readDumpFile.Write(b[:n])
+	n, err := ctx.Conn.Read(b)
+	if ctx.DumpFileForRead != nil {
+		ctx.DumpFileForRead.Write(b[:n])
 	}
+	ctx.AmountRead += len(b)
 	return n, err
 }
 
-// Write Proxy for ctx.conn.Write
+// Write Proxy for CTX.Conn.Write
 func (ctx ConnContext) Write(b []byte) (int, error) {
-	n, err := ctx.conn.Write(b)
-	if ctx.writeDumpFile != nil {
-		ctx.writeDumpFile.Write(b[:n])
+	n, err := ctx.Conn.Write(b)
+	if ctx.DumpFileForWrite != nil {
+		ctx.DumpFileForWrite.Write(b[:n])
 	}
+	ctx.AmountWrote += len(b)
 	return n, err
 }
 
 // ReadPacket _
+// TODO Refactor
 func (ctx *ConnContext) ReadPacket() (Header, []byte, error) {
 	header, err := getHeader(ctx)
+	firstheader := header
 	if err != nil {
 		return Header{}, []byte{}, err
 	}
@@ -89,7 +98,7 @@ func (ctx *ConnContext) ReadPacket() (Header, []byte, error) {
 	for {
 		_, err = ctx.Read(tmp[:chunkLen])
 		if err != nil {
-			return Header{}, []byte{}, err
+			return Header{}, body, err
 		}
 		offset += copy(body[offset:], tmp)
 		chunkLen = min(dataToRead-offset, ctx.ChunkSize)
@@ -98,29 +107,30 @@ func (ctx *ConnContext) ReadPacket() (Header, []byte, error) {
 		}
 		header, err = getHeader(ctx)
 		if err != nil {
-			return Header{}, []byte{}, err
+			return Header{}, body, err
 		}
 	}
-	return header, body, nil
+	return firstheader, body, nil
 }
 
 func initCTX(conn net.Conn) ConnContext {
 
 	ctx := ConnContext{
-		conn:                        conn,
+		Conn:                        conn,
 		ChunkSize:                   128,
-		initTime:                    getTime(),
+		InitTime:                    uint32(getTime()),
 		ServerWindowAcknowledgement: 2500000,
 		PeerBandwidth:               128,
+		ChunkStreamID:               3,
 	}
 
-	if options.dumpfilein != "" &&
-		options.dumpfileout != "" {
-		n := options.dumpfilecounter
-		options.dumpfilecounter++
+	if options.DumpInFnTemplate != "" &&
+		options.DumpOutFnTemplate != "" {
+		n := options.DumpFileCounter
+		options.DumpFileCounter++
 
-		readfilename := fmt.Sprintf("%s.%d", options.dumpfilein, n)
-		writefilename := fmt.Sprintf("%s.%d", options.dumpfileout, n)
+		readfilename := fmt.Sprintf("%s.%d", options.DumpInFnTemplate, n)
+		writefilename := fmt.Sprintf("%s.%d", options.DumpOutFnTemplate, n)
 
 		fmt.Printf(
 			"Opening dump files\nInput data: %s\nOutput data: %s\n",
@@ -132,14 +142,14 @@ func initCTX(conn net.Conn) ConnContext {
 		if err != nil {
 			log.Println("Couldn't open Read dump file")
 		} else {
-			ctx.readDumpFile = readfile
+			ctx.DumpFileForRead = readfile
 		}
 
 		writefile, err := os.OpenFile(writefilename, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Println("Couldn't open Write dump file")
 		} else {
-			ctx.writeDumpFile = writefile
+			ctx.DumpFileForWrite = writefile
 		}
 	}
 

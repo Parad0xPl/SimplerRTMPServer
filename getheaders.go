@@ -9,18 +9,18 @@ import (
 
 // Header options
 type Header struct {
-	ChunkID       int
-	Format        int
-	Timestamp     int
-	MessageLength int
-	TypeID        int
-	StreamID      int
-	Size          int
+	ChunkStreamID    int
+	Format           int
+	MessageTimestamp uint32
+	MessageLength    int
+	MessageTypeID    int
+	MessageStreamID  int
+	Size             int
 }
 
 // Compare is headers have common values
 func (h *Header) Compare(o Header) bool {
-	if h.ChunkID != o.ChunkID {
+	if h.ChunkStreamID != o.ChunkStreamID {
 		return false
 	}
 	if h.Format != o.Format {
@@ -29,13 +29,13 @@ func (h *Header) Compare(o Header) bool {
 	if h.MessageLength != o.MessageLength {
 		return false
 	}
-	if h.StreamID != o.StreamID {
+	if h.MessageStreamID != o.MessageStreamID {
 		return false
 	}
-	if h.Timestamp != o.Timestamp {
+	if h.MessageTimestamp != o.MessageTimestamp {
 		return false
 	}
-	if h.TypeID != o.TypeID {
+	if h.MessageTypeID != o.MessageTypeID {
 		return false
 	}
 	return true
@@ -43,32 +43,32 @@ func (h *Header) Compare(o Header) bool {
 
 // CopyFrom other header
 func (h *Header) CopyFrom(o *Header) {
-	h.ChunkID = o.ChunkID
+	h.ChunkStreamID = o.ChunkStreamID
 	h.Format = o.Format
 	h.MessageLength = o.MessageLength
-	h.StreamID = o.StreamID
-	h.Timestamp = o.Timestamp
-	h.TypeID = o.TypeID
+	h.MessageStreamID = o.MessageStreamID
+	h.MessageTimestamp = o.MessageTimestamp
+	h.MessageTypeID = o.MessageTypeID
 }
 
 func (h Header) String() string {
 	var str strings.Builder
 	str.WriteString(fmt.Sprintf("Fmt:%d ", h.Format))
-	str.WriteString(fmt.Sprintf("ChuID:%d ", h.ChunkID))
-	str.WriteString(fmt.Sprintf("Timestm:%d ", h.Timestamp))
+	str.WriteString(fmt.Sprintf("ChuID:%d ", h.ChunkStreamID))
+	str.WriteString(fmt.Sprintf("Timestm:%d ", h.MessageTimestamp))
 	str.WriteString(fmt.Sprintf("Msglen:%d ", h.MessageLength))
-	str.WriteString(fmt.Sprintf("TypeID:%d ", h.TypeID))
-	str.WriteString(fmt.Sprintf("StrID:%d", h.StreamID))
+	str.WriteString(fmt.Sprintf("MessageTypeID:%d ", h.MessageTypeID))
+	str.WriteString(fmt.Sprintf("MessageStrID:%d", h.MessageStreamID))
 	return str.String()
 }
 
-func getExtandedTime(ctx *ConnContext) (int, error) {
+func getExtendedTime(ctx *ConnContext) (uint, error) {
 	tmp := make([]byte, 4)
 	n, err := ctx.Read(tmp)
 	if n != 4 || err != nil {
-		return 0, errors.New("Problem with extanded time")
+		return 0, errors.New("Problem with extended time.")
 	}
-	return utils.ReadInt(tmp), nil
+	return utils.ReadUint(tmp), nil
 }
 
 // getHeader get header of RTMP chunk as specified in documentation(docs.pdf)
@@ -116,11 +116,11 @@ func getHeader(ctx *ConnContext) (Header, error) {
 		chunkid = int(firstbyte[0])
 	}
 
-	var timestamp, messlength, typeid, streamid int
-	timestamp = -1
-	messlength = -1
-	typeid = -1
-	streamid = -1
+	var timestamp uint
+	var messageLength, messageTypeID, messageStreamID int
+	messageLength = -1
+	messageTypeID = -1
+	messageStreamID = -1
 	switch format {
 	case 0:
 		// Type 0
@@ -132,92 +132,94 @@ func getHeader(ctx *ConnContext) (Header, error) {
 		if err != nil {
 			return Header{}, err
 		}
-		timestamp = utils.ReadInt(tmp[0:3])
+		timestamp = utils.ReadUint(tmp[0:3])
 		if ^timestamp == 0 {
-			t, err := getExtandedTime(ctx)
+			t, err := getExtendedTime(ctx)
 			size += 4
 			if err != nil {
 				return Header{}, err
 			}
 			timestamp = t
 		}
-		messlength = utils.ReadInt(tmp[3:6])
-		typeid = int(tmp[6])
-		streamid = utils.ReadInt(tmp[7:])
+		messageLength = utils.ReadInt(tmp[3:6])
+		messageTypeID = int(tmp[6])
+		messageStreamID = utils.ReadInt(tmp[7:])
+
 	case 1:
 		// Type 1
 		// 7 bytes long
-		// Streamid is sipped
-		// Timedelta instead of time
+		// StreamID is skipped
+		// Time delta instead of time
 		tmp = make([]byte, 7)
 		_, err = ctx.Read(tmp)
 		size += 7
 		if err != nil {
 			return Header{}, err
 		}
-		timestamp = utils.ReadInt(tmp[0:3])
+		timestamp = utils.ReadUint(tmp[0:3])
 		if ^timestamp == 0 {
-			t, err := getExtandedTime(ctx)
+			t, err := getExtendedTime(ctx)
 			size += 4
 			if err != nil {
 				return Header{}, err
 			}
 			timestamp = t
 		}
-		timestamp += ctx.lastHeaderReceived.Timestamp
-		messlength = utils.ReadInt(tmp[3:6])
-		typeid = int(tmp[6])
-		streamid = ctx.lastHeaderReceived.StreamID
+		timestamp += uint(ctx.LastHeaderReceived.MessageTimestamp)
+		messageLength = utils.ReadInt(tmp[3:6])
+		messageTypeID = int(tmp[6])
+		messageStreamID = ctx.LastHeaderReceived.MessageStreamID
+
 	case 2:
 		// Type 2
 		// 3 bytes long
-		// Only timedelta is given
+		// Only time delta is given
 		tmp = make([]byte, 3)
 		_, err = ctx.Read(tmp)
 		size += 3
 		if err != nil {
 			return Header{}, err
 		}
-		timestamp = utils.ReadInt(tmp[0:3])
+		timestamp = utils.ReadUint(tmp[0:3])
 		if ^timestamp == 0 {
 			size += 4
-			t, err := getExtandedTime(ctx)
+			t, err := getExtendedTime(ctx)
 			if err != nil {
 				return Header{}, err
 			}
 			timestamp = t
 		}
-		timestamp += ctx.lastHeaderReceived.Timestamp
-		streamid = ctx.lastHeaderReceived.StreamID
-		messlength = ctx.lastHeaderReceived.MessageLength
-		typeid = ctx.lastHeaderReceived.TypeID
+		timestamp += uint(ctx.LastHeaderReceived.MessageTimestamp)
+		messageStreamID = ctx.LastHeaderReceived.MessageStreamID
+		messageLength = ctx.LastHeaderReceived.MessageLength
+		messageTypeID = ctx.LastHeaderReceived.MessageTypeID
 
 	case 3:
 		// Type 3
 		// Should use data from lastHeader
-		timestamp = ctx.lastHeaderReceived.Timestamp
+		timestamp = uint(ctx.LastHeaderReceived.MessageTimestamp)
 		if ^timestamp == 0 {
 			size += 4
-			t, err := getExtandedTime(ctx)
+			t, err := getExtendedTime(ctx)
 			if err != nil {
 				return Header{}, err
 			}
 			timestamp = t
 		}
-		streamid = ctx.lastHeaderReceived.StreamID
-		messlength = ctx.lastHeaderReceived.MessageLength
-		typeid = ctx.lastHeaderReceived.TypeID
+		messageStreamID = ctx.LastHeaderReceived.MessageStreamID
+		messageLength = ctx.LastHeaderReceived.MessageLength
+		messageTypeID = ctx.LastHeaderReceived.MessageTypeID
 	}
 
 	lastHeader := Header{
-		ChunkID:       chunkid,
-		Format:        format,
-		Timestamp:     timestamp,
-		MessageLength: messlength,
-		TypeID:        typeid,
-		StreamID:      streamid,
-		Size:          size,
+		ChunkStreamID:    chunkid,
+		Format:           format,
+		MessageTimestamp: uint32(timestamp),
+		MessageLength:    messageLength,
+		MessageTypeID:    messageTypeID,
+		MessageStreamID:  messageStreamID,
+		Size:             size,
 	}
-	ctx.lastHeaderReceived = lastHeader
+	ctx.LastHeaderReceived = lastHeader
 	return lastHeader, nil
 }

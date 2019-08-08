@@ -14,10 +14,10 @@ func main() {
 	options.init()
 	initStrMan()
 
-	if options.connfilein != "" &&
-		options.connfileout != "" {
-		faceconn, err := utils.OpenFileConn(options.connfilein,
-			options.connfileout)
+	if options.FileConnectionInput != "" &&
+		options.FileConnectionOutput != "" {
+		faceconn, err := utils.OpenFileConn(options.FileConnectionInput,
+			options.FileConnectionOutput)
 		if err != nil {
 			log.Panicln(err)
 		}
@@ -26,7 +26,12 @@ func main() {
 		return
 	}
 
-	err := serve(options.port, handler)
+	if options.Analyse != "" {
+		analyze(options.Analyse)
+		return
+	}
+
+	err := serve(options.Port, handler)
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -5,9 +5,9 @@ import (
 )
 
 // Type3 header
-func (header) Type3(timestamp int) []byte {
+func (header) Type3(timestamp uint32) []byte {
 	if timestamp > 0xffffff {
-		return utils.WriteInt(timestamp, 4)
+		return utils.WriteUint(uint(timestamp), 4)
 	}
 	return []byte{}
 }

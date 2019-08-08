@@ -21,6 +21,7 @@ func serve(port int, handler func(net.Conn)) (err error) {
 		conn, err := l.Accept()
 		if err != nil {
 			log.Println(err)
+			continue
 		}
 
 		// pass handler to goroutine
