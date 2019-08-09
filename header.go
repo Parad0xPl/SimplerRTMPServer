@@ -11,7 +11,7 @@ import (
 type Header struct {
 	ChunkStreamID    int
 	Format           int
-	MessageTimestamp uint32
+	MessageTimestamp RTMPTime
 	MessageLength    int
 	MessageTypeID    int
 	MessageStreamID  int
@@ -39,6 +39,11 @@ func (h *Header) Compare(o Header) bool {
 		return false
 	}
 	return true
+}
+
+// Timestamp get timestamp
+func (h *Header) Timestamp() uint32 {
+	return h.MessageTimestamp.uint32()
 }
 
 // CopyFrom other header
@@ -181,6 +186,7 @@ func getHeader(ctx *ConnContext) (Header, error) {
 			return Header{}, err
 		}
 		timestamp = utils.ReadUint(tmp[0:3])
+		// TODO: fix condition
 		if ^timestamp == 0 {
 			size += 4
 			t, err := getExtendedTime(ctx)
@@ -198,6 +204,7 @@ func getHeader(ctx *ConnContext) (Header, error) {
 		// Type 3
 		// Should use data from lastHeader
 		timestamp = uint(ctx.LastHeaderReceived.MessageTimestamp)
+		// TODO: fix condition
 		if ^timestamp == 0 {
 			size += 4
 			t, err := getExtendedTime(ctx)
@@ -214,7 +221,7 @@ func getHeader(ctx *ConnContext) (Header, error) {
 	lastHeader := Header{
 		ChunkStreamID:    chunkid,
 		Format:           format,
-		MessageTimestamp: uint32(timestamp),
+		MessageTimestamp: RTMPTime(timestamp),
 		MessageLength:    messageLength,
 		MessageTypeID:    messageTypeID,
 		MessageStreamID:  messageStreamID,

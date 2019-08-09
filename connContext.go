@@ -15,6 +15,11 @@ func min(a, b int) int {
 }
 
 type RawDataHandler func([]byte)
+type RTMPTime uint32
+
+func (t RTMPTime) uint32() uint32 {
+	return uint32(t)
+}
 
 // ConnContext Structure for connection data and settings
 type ConnContext struct {
@@ -28,7 +33,7 @@ type ConnContext struct {
 	VideoHandler RawDataHandler
 
 	ChunkSize     int
-	InitTime      uint32
+	InitTime      RTMPTime
 	IsMetadataSet bool
 
 	LastHeaderReceived Header
@@ -60,6 +65,16 @@ func (ctx *ConnContext) Clear() {
 		ctx.Channel.Metadata = nil
 	}
 	ctx.Conn.Close()
+}
+
+// GetTime get current timestamp
+func (ctx *ConnContext) GetTime() RTMPTime {
+	return RTMPTime(getTime() - uint64(ctx.InitTime))
+}
+
+// Delta get delta of time
+func (ctx *ConnContext) Delta(MessageTimestamp RTMPTime) uint32 {
+	return (MessageTimestamp - ctx.LastHeaderSend.MessageTimestamp).uint32()
 }
 
 // Read Proxy for CTX.Conn.Read
@@ -118,7 +133,7 @@ func initCTX(conn net.Conn) ConnContext {
 	ctx := ConnContext{
 		Conn:                        conn,
 		ChunkSize:                   128,
-		InitTime:                    uint32(getTime()),
+		InitTime:                    RTMPTime(getTime()),
 		ServerWindowAcknowledgement: 2500000,
 		PeerBandwidth:               128,
 		ChunkStreamID:               3,
