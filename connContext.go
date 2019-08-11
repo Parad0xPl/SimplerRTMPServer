@@ -39,6 +39,7 @@ type ConnContext struct {
 	LastHeaderReceived *Header
 	LastHeaderSend     *Header
 	HeadersCache       *HeadersCache
+	LastSendTimestamp  RTMPTime
 
 	AmountRead  int
 	AmountWrote int
@@ -75,7 +76,7 @@ func (ctx *ConnContext) GetTime() RTMPTime {
 
 // Delta get delta of time
 func (ctx *ConnContext) Delta(MessageTimestamp RTMPTime) uint32 {
-	return (MessageTimestamp - ctx.LastHeaderSend.MessageTimestamp).uint32()
+	return (MessageTimestamp - ctx.LastSendTimestamp).uint32()
 }
 
 // Read Proxy for CTX.Conn.Read

@@ -3,6 +3,7 @@ package main
 import (
 	"SimpleRTMPServer/build"
 	"bytes"
+	"log"
 )
 
 func checkType1(h, o Header) bool {
@@ -65,6 +66,8 @@ func (ctx *ConnContext) sendPacket(pkt PacketPrototype) {
 	}
 	header.MessageLength = messLen
 	header.MessageTimestamp = ctx.GetTime()
+	log.Println("Timestamp", header.MessageTimestamp)
+	ctx.LastSendTimestamp = header.MessageTimestamp
 	for i := 0; i < messLen; i += ctx.ChunkSize {
 		ctx.sendChunk(PacketPrototype{header, body[i:min(i+ctx.ChunkSize, messLen)]})
 	}
