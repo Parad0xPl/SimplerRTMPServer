@@ -36,8 +36,9 @@ type ConnContext struct {
 	InitTime      RTMPTime
 	IsMetadataSet bool
 
-	LastHeaderReceived Header
+	LastHeaderReceived *Header
 	LastHeaderSend     *Header
+	HeadersCache       *HeadersCache
 
 	AmountRead  int
 	AmountWrote int
@@ -138,6 +139,8 @@ func initCTX(conn net.Conn) ConnContext {
 		PeerBandwidth:               128,
 		ChunkStreamID:               3,
 	}
+
+	ctx.HeadersCache = newHeadersCache()
 
 	if options.DumpInFnTemplate != "" &&
 		options.DumpOutFnTemplate != "" {
