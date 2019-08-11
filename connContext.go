@@ -78,9 +78,9 @@ func (ctx *ConnContext) Delta(MessageTimestamp RTMPTime) uint32 {
 }
 
 // Read Proxy for CTX.Conn.Read
-func (ctx ConnContext) Read(b []byte) (int, error) {
+func (ctx *ConnContext) Read(b []byte) (int, error) {
 	n, err := ctx.Conn.Read(b)
-	if ctx.DumpFileForRead != nil {
+	if ctx.DumpFileForRead != nil && err == nil {
 		ctx.DumpFileForRead.Write(b[:n])
 	}
 	ctx.AmountRead += len(b)
@@ -88,9 +88,9 @@ func (ctx ConnContext) Read(b []byte) (int, error) {
 }
 
 // Write Proxy for CTX.Conn.Write
-func (ctx ConnContext) Write(b []byte) (int, error) {
+func (ctx *ConnContext) Write(b []byte) (int, error) {
 	n, err := ctx.Conn.Write(b)
-	if ctx.DumpFileForWrite != nil {
+	if ctx.DumpFileForWrite != nil && err == nil {
 		ctx.DumpFileForWrite.Write(b[:n])
 	}
 	ctx.AmountWrote += len(b)

@@ -30,8 +30,34 @@ func formatByteSlice(slc []byte) string {
 	return string(target)
 }
 
+func getType(p ReceivedPacket) (string, bool) {
+	if p.Header.ChunkStreamID == 2 && p.Header.MessageStreamID == 0 {
+		if p.Header.MessageTypeID == 4 {
+			return "UCM", false
+		} else {
+			return "PCM", false
+		}
+	} else {
+		switch p.Header.MessageTypeID {
+		case 8:
+			return "Audio Data", false
+		case 9:
+			return "Video Data", false
+		case 15:
+			return "AMF3 Data", false
+		case 17:
+			return "AMF3 Command", false
+		case 18:
+			return "AMF0 Data", true
+		case 20:
+			return "AMF0 Command", true
+		}
+	}
+	return "undefined", true
+}
+
 func analyze(fn string) {
-	fmt.Printf("Analysing %s file.\n", fn)
+	fmt.Printf("Analyzing %s file.\n", fn)
 	conn, err := utils.OpenFileConn(fn, "")
 	if err != nil {
 		fmt.Println("Problem with opening file:\n", err)
@@ -55,26 +81,43 @@ func analyze(fn string) {
 		return
 	}
 
-	ctx := initCTX(conn)
+	ctx := initCTX(&conn)
 	defer ctx.Clear()
 
 	index := 1
 	for {
+		fmt.Printf("[%d] Position %d\n", index, conn.AmountRead())
 		header, bytes, err := ctx.ReadPacket()
+
+		p := ReceivedPacket{
+			&ctx,
+			&header,
+			bytes,
+		}
+
+		typeOf, ifPrintData := getType(p)
+
+		fmt.Printf("[%d] File read %.2f%%\n", index, conn.Percent()*100)
 		fmt.Printf("[%d] Header: %s\n", index, header)
+		fmt.Printf("[%d] Type: %s\n", index, typeOf)
 		fmt.Printf("[%d] DataLen: %d\n", index, len(bytes))
-		fmt.Printf("[%d] Data: \n%s\n", index, formatByteSlice(bytes))
+		if ifPrintData {
+			fmt.Printf("[%d] Data: \n%s\n", index, formatByteSlice(bytes))
+		}
+
 		if err != nil {
 			fmt.Println("Can't read packet\n", err)
 			return
 		}
 
-		handlePacket(ReceivedPacket{
-			&ctx,
-			&header,
-			bytes,
-		})
+		if header.ChunkStreamID == 2 && header.MessageStreamID == 0 {
+			err := handlePCM(p)
+			if err != nil {
+				fmt.Println("Problem with PCM", err)
+			}
+		}
 
+		fmt.Println()
 		index++
 	}
 }

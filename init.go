@@ -15,7 +15,7 @@ type Options struct {
 	DumpInFnTemplate  string // Attach file as net.Conn
 	DumpOutFnTemplate string // Attach file as net.Conn
 
-	Analyse string // File with traffic to analise
+	Analyze string // File with traffic to analise
 }
 
 func (opts *Options) init() {
@@ -29,7 +29,7 @@ func (opts *Options) init() {
 	flag.StringVar(&opts.DumpInFnTemplate, "dfi", "", "File to dump connection (DEBUG function)")
 	flag.StringVar(&opts.DumpOutFnTemplate, "dfo", "", "File to dump connection (DEBUG function)")
 
-	flag.StringVar(&opts.Analyse, "analyse", "", "File to analyse (DEBUG function)")
+	flag.StringVar(&opts.Analyze, "analyze", "", "File to analyze (DEBUG function)")
 
 	flag.Parse()
 }

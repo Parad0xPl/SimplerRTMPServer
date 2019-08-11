@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"log"
 	"net"
 	"os"
 	"time"
@@ -10,6 +11,9 @@ import (
 type FileConn struct {
 	inAddress  FileAddress
 	outAddress FileAddress
+
+	amountRead int64
+	sizeOfFile int64
 
 	inFile  *os.File
 	outFile *os.File
@@ -39,6 +43,15 @@ func OpenFileConn(inputfn, outputfn string) (FileConn, error) {
 		return FileConn{}, err
 	}
 
+	var sizeOfFile int64
+	fi, err := inputFile.Stat()
+	if err != nil {
+		log.Println("Problem with reading file info, setting size to -1")
+		sizeOfFile = -1
+	} else {
+		sizeOfFile = fi.Size()
+	}
+
 	if outputfn != "" {
 		outputFile, err = os.OpenFile(outputfn, os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
@@ -53,16 +66,32 @@ func OpenFileConn(inputfn, outputfn string) (FileConn, error) {
 		outAddress: FileAddress{
 			outputfn,
 		},
-		inFile:  inputFile,
-		outFile: outputFile,
+		sizeOfFile: sizeOfFile,
+		amountRead: 0,
+		inFile:     inputFile,
+		outFile:    outputFile,
 	}, nil
 }
 
-func (f FileConn) Seek(offset int64, whence int) (n int64, err error) {
+func (f FileConn) Percent() float64 {
+	return float64(f.amountRead) / float64(f.sizeOfFile)
+}
+
+func (f FileConn) IsRead() bool {
+	return f.amountRead == f.sizeOfFile
+}
+
+func (f FileConn) AmountRead() int64 {
+	return f.amountRead
+}
+
+func (f *FileConn) Seek(offset int64, whence int) (n int64, err error) {
+	f.amountRead += offset
 	return f.inFile.Seek(offset, whence)
 }
 
-func (f FileConn) Read(b []byte) (n int, err error) {
+func (f *FileConn) Read(b []byte) (n int, err error) {
+	f.amountRead += int64(len(b))
 	return f.inFile.Read(b)
 }
 

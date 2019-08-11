@@ -21,13 +21,13 @@ func main() {
 		if err != nil {
 			log.Panicln(err)
 		}
-		handler(faceconn)
+		handler(&faceconn)
 
 		return
 	}
 
-	if options.Analyse != "" {
-		analyze(options.Analyse)
+	if options.Analyze != "" {
+		analyze(options.Analyze)
 		return
 	}
 
