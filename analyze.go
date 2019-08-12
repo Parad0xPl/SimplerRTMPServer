@@ -5,20 +5,13 @@ import (
 	"fmt"
 )
 
-func toHex(b uint8) byte {
-	if b >= 10 {
-		return 'a' + b - 10
-	}
-	return '0' + b
-}
-
 func formatByteSlice(slc []byte) string {
 	target := make([]byte, len(slc)*3)
 	index := 0
 	for _, v := range slc {
-		target[index] = toHex(uint8(v) >> 4)
+		target[index] = utils.ToHex(uint8(v) >> 4)
 		index++
-		target[index] = toHex(uint8(v) & ((1 << 4) - 1))
+		target[index] = utils.ToHex(uint8(v) & ((1 << 4) - 1))
 		index++
 		if ((index/3)+1)%16 == 0 {
 			target[index] = '\n'
