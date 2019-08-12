@@ -10,33 +10,6 @@ import (
 // StreamObject represent stream
 type StreamObject struct{}
 
-// ChannelObject represent stream
-// TODO: Clean() all closed connections
-// TODO: Close() all subscribers
-type ChannelObject struct {
-	Name       string
-	Key        string
-	Subscribed map[hash.Type]*ConnContext
-	Metadata   map[string]interface{}
-}
-
-func (co *ChannelObject) subscribe(ctx *ConnContext) {
-	co.Subscribed[ctx.Hash()] = ctx
-}
-
-func (co *ChannelObject) isSubscribed(ctx *ConnContext) bool {
-	_, ok := co.Subscribed[ctx.Hash()]
-	return ok
-}
-
-func (co *ChannelObject) unsubscribe(ctx *ConnContext) {
-	delete(co.Subscribed, ctx.Hash())
-}
-
-func (co *ChannelObject) verify(key string) bool {
-	return co.Key == key
-}
-
 // ServerInstance Object which store server data
 type ServerInstance struct {
 	TopFreeID int
@@ -100,7 +73,7 @@ func (sm *ServerInstance) publish(id int, name string) error {
 	return nil
 }
 
-func (sm *ServerInstance) unpublish(name string) {
+func (sm *ServerInstance) unPublish(name string) {
 	if !sm.checkName(name) {
 		return
 	}

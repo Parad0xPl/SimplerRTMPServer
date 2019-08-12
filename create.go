@@ -27,23 +27,23 @@ func (create) PCMSetChunkSize(size int) PacketPrototype {
 	return PacketPrototype{head, body}
 }
 
-func (create) PCMAbortMessage(chunkid int) PacketPrototype {
+func (create) PCMAbortMessage(chunkID int) PacketPrototype {
 	head := Header{
 		MessageTypeID:   2,
 		MessageStreamID: 0,
 		ChunkStreamID:   2,
 	}
-	body, _ := build.Body.PCM.AbortMessage(chunkid)
+	body, _ := build.Body.PCM.AbortMessage(chunkID)
 	return PacketPrototype{head, body}
 }
 
-func (create) PCMAcknowledgement(seqnumber int) PacketPrototype {
+func (create) PCMAcknowledgement(seqNumber int) PacketPrototype {
 	head := Header{
 		MessageTypeID:   3,
 		MessageStreamID: 0,
 		ChunkStreamID:   2,
 	}
-	body, _ := build.Body.PCM.AbortMessage(seqnumber)
+	body, _ := build.Body.PCM.AbortMessage(seqNumber)
 	return PacketPrototype{head, body}
 }
 
@@ -57,13 +57,13 @@ func (create) PCMWindowAckSize(winsize int) PacketPrototype {
 	return PacketPrototype{head, body}
 }
 
-func (create) PAMSetPeerBandwidth(windowsize, limittype int) PacketPrototype {
+func (create) PAMSetPeerBandwidth(windowSize, limitType int) PacketPrototype {
 	head := Header{
 		MessageTypeID:   6,
 		MessageStreamID: 0,
 		ChunkStreamID:   2,
 	}
-	body, _ := build.Body.PCM.SetPeerBandwidth(windowsize, limittype)
+	body, _ := build.Body.PCM.SetPeerBandwidth(windowSize, limitType)
 	return PacketPrototype{head, body}
 }
 
@@ -97,13 +97,13 @@ func (create) UCMStreamDry(streamID int) PacketPrototype {
 	return PacketPrototype{head, body}
 }
 
-func (create) UCMSetBufferLength(streamID, bufflen int) PacketPrototype {
+func (create) UCMSetBufferLength(streamID, buffLen int) PacketPrototype {
 	head := Header{
 		MessageTypeID:   4,
 		MessageStreamID: 0,
 		ChunkStreamID:   2,
 	}
-	eventData := utils.Concat(utils.WriteInt(streamID, 4), utils.WriteInt(bufflen, 4))
+	eventData := utils.Concat(utils.WriteInt(streamID, 4), utils.WriteInt(buffLen, 4))
 	body, _ := build.Body.UCM(3, eventData)
 	return PacketPrototype{head, body}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"SimpleRTMPServer/build"
+	"SimpleRTMPServer/utils"
 	"bytes"
 )
 
@@ -53,7 +54,7 @@ func (ctx *ConnContext) sendChunk(pkt PacketPrototype) {
 	ctx.Write(buffer.Bytes())
 }
 
-func (ctx *ConnContext) sendPacket(pkt PacketPrototype) {
+func (ctx *ConnContext) SendPacket(pkt PacketPrototype) {
 	header := pkt.Head
 	body := pkt.Body
 	messLen := len(body)
@@ -66,7 +67,7 @@ func (ctx *ConnContext) sendPacket(pkt PacketPrototype) {
 	header.MessageLength = messLen
 	header.MessageTimestamp = ctx.GetTime()
 	for i := 0; i < messLen; i += ctx.ChunkSize {
-		ctx.sendChunk(PacketPrototype{header, body[i:min(i+ctx.ChunkSize, messLen)]})
+		ctx.sendChunk(PacketPrototype{header, body[i:utils.Min(i+ctx.ChunkSize, messLen)]})
 	}
 	// TODO: support value overflow
 	ctx.LastSendTimestamp = header.MessageTimestamp

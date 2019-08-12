@@ -1,7 +1,8 @@
-package main
+package utils
 
 import "time"
 
-func getTime() uint64 {
+// GetTime in milliseconds
+func GetTime() uint64 {
 	return uint64(time.Now().UnixNano() / 1000000)
 }

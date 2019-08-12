@@ -14,8 +14,8 @@ func ReadObject(data []byte) (map[string]interface{}, int) {
 		}
 		key, n := ReadString(data[i:])
 		i += n
-		tmp, tmplen := ReadAny(data[i:])
-		i += tmplen
+		tmp, tmpLen := ReadAny(data[i:])
+		i += tmpLen
 		parsedData[key] = tmp
 	}
 	return parsedData, i

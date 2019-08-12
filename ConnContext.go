@@ -1,18 +1,12 @@
 package main
 
 import (
+	"SimpleRTMPServer/utils"
 	"fmt"
 	"log"
 	"net"
 	"os"
 )
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
 
 type RawDataHandler func([]byte)
 type RTMPTime uint32
@@ -68,15 +62,15 @@ func (ctx *ConnContext) Clear() {
 		ctx.Channel.Metadata = nil
 	}
 
-	if ctx.Channel.isSubscribed(ctx) {
-		ctx.Channel.unsubscribe(ctx)
+	if ctx.Channel.IsSubscribed(ctx) {
+		ctx.Channel.Unsubscribe(ctx)
 	}
 	ctx.Conn.Close()
 }
 
 // GetTime get current timestamp
 func (ctx *ConnContext) GetTime() RTMPTime {
-	return RTMPTime(getTime() - uint64(ctx.InitTime))
+	return RTMPTime(utils.GetTime() - uint64(ctx.InitTime))
 }
 
 // Delta get delta of time
@@ -108,13 +102,13 @@ func (ctx *ConnContext) Write(b []byte) (int, error) {
 // TODO Refactor
 func (ctx *ConnContext) ReadPacket() (Header, []byte, error) {
 	header, err := getHeader(ctx)
-	firstheader := header
+	firstHeader := header
 	if err != nil {
 		return Header{}, []byte{}, err
 	}
 	dataToRead := header.MessageLength
 	offset := 0
-	chunkLen := min(dataToRead, ctx.ChunkSize)
+	chunkLen := utils.Min(dataToRead, ctx.ChunkSize)
 	body := make([]byte, header.MessageLength)
 	tmp := make([]byte, chunkLen)
 	for {
@@ -123,7 +117,7 @@ func (ctx *ConnContext) ReadPacket() (Header, []byte, error) {
 			return Header{}, body, err
 		}
 		offset += copy(body[offset:], tmp)
-		chunkLen = min(dataToRead-offset, ctx.ChunkSize)
+		chunkLen = utils.Min(dataToRead-offset, ctx.ChunkSize)
 		if dataToRead-offset <= 0 {
 			break
 		}
@@ -132,7 +126,7 @@ func (ctx *ConnContext) ReadPacket() (Header, []byte, error) {
 			return Header{}, body, err
 		}
 	}
-	return firstheader, body, nil
+	return firstHeader, body, nil
 }
 
 func initCTX(conn net.Conn) ConnContext {
@@ -141,7 +135,7 @@ func initCTX(conn net.Conn) ConnContext {
 		Index:                       serverInstance.NewConn(),
 		Conn:                        conn,
 		ChunkSize:                   128,
-		InitTime:                    RTMPTime(getTime()),
+		InitTime:                    RTMPTime(utils.GetTime()),
 		ServerWindowAcknowledgement: 2500000,
 		PeerBandwidth:               128,
 		ChunkStreamID:               3,
@@ -154,27 +148,27 @@ func initCTX(conn net.Conn) ConnContext {
 		n := options.DumpFileCounter
 		options.DumpFileCounter++
 
-		readfilename := fmt.Sprintf("%s.%d", options.DumpInFnTemplate, n)
-		writefilename := fmt.Sprintf("%s.%d", options.DumpOutFnTemplate, n)
+		readFilename := fmt.Sprintf("%s.%d", options.DumpInFnTemplate, n)
+		writeFilename := fmt.Sprintf("%s.%d", options.DumpOutFnTemplate, n)
 
 		fmt.Printf(
 			"Opening dump files\nInput data: %s\nOutput data: %s\n",
-			readfilename,
-			writefilename,
+			readFilename,
+			writeFilename,
 		)
 
-		readfile, err := os.OpenFile(readfilename, os.O_CREATE|os.O_WRONLY, 0644)
+		readFile, err := os.OpenFile(readFilename, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Println("Couldn't open Read dump file")
 		} else {
-			ctx.DumpFileForRead = readfile
+			ctx.DumpFileForRead = readFile
 		}
 
-		writefile, err := os.OpenFile(writefilename, os.O_CREATE|os.O_WRONLY, 0644)
+		writeFile, err := os.OpenFile(writeFilename, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Println("Couldn't open Write dump file")
 		} else {
-			ctx.DumpFileForWrite = writefile
+			ctx.DumpFileForWrite = writeFile
 		}
 	}
 

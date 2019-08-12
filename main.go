@@ -8,20 +8,23 @@ import (
 
 var options Options
 
+func init() {
+	options.init()
+}
+
 func main() {
 	fmt.Println("Starting SimpleRTMP Server")
 
-	options.init()
 	initServerInstance()
 
 	if options.FileConnectionInput != "" &&
 		options.FileConnectionOutput != "" {
-		faceconn, err := utils.OpenFileConn(options.FileConnectionInput,
+		faceConn, err := utils.OpenFileConn(options.FileConnectionInput,
 			options.FileConnectionOutput)
 		if err != nil {
 			log.Panicln(err)
 		}
-		handler(&faceconn)
+		handler(&faceConn)
 
 		return
 	}

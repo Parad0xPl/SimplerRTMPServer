@@ -24,8 +24,8 @@ func handlePCM(packet ReceivedPacket) error {
 		// TODO Abort message
 	case 3:
 		fmt.Println("Get 'Acknowledgement'")
-		seqnum := utils.ReadInt(packet.Data[0:4])
-		fmt.Println("Sequence number:", seqnum)
+		seqNum := utils.ReadInt(packet.Data[0:4])
+		fmt.Println("Sequence number:", seqNum)
 	case 4:
 		err := handleUCM(packet)
 		return err

@@ -9,11 +9,11 @@ import (
 // ReadECMAArray _
 func ReadECMAArray(data []byte) (map[string]interface{}, int) {
 	offset := 0
-	alen := utils.ReadInt(data[0:4])
+	aLen := utils.ReadInt(data[0:4])
 	offset += 4
 	i := 0
 	ret := make(map[string]interface{})
-	for i < alen {
+	for i < aLen {
 		prop, n := ReadString(data[offset:])
 		offset += n
 		item, n := ReadAny(data[offset:])

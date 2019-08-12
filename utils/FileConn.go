@@ -34,11 +34,11 @@ func (f FileAddress) String() string {
 }
 
 // OpenFileConn Opens file to imitate net.Conn interface
-func OpenFileConn(inputfn, outputfn string) (FileConn, error) {
+func OpenFileConn(inputFN, outputFN string) (FileConn, error) {
 	var inputFile, outputFile *os.File
 	var err error
 
-	inputFile, err = os.Open(inputfn)
+	inputFile, err = os.Open(inputFN)
 	if err != nil {
 		return FileConn{}, err
 	}
@@ -52,8 +52,8 @@ func OpenFileConn(inputfn, outputfn string) (FileConn, error) {
 		sizeOfFile = fi.Size()
 	}
 
-	if outputfn != "" {
-		outputFile, err = os.OpenFile(outputfn, os.O_RDWR|os.O_CREATE, 0644)
+	if outputFN != "" {
+		outputFile, err = os.OpenFile(outputFN, os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
 			return FileConn{}, err
 		}
@@ -61,10 +61,10 @@ func OpenFileConn(inputfn, outputfn string) (FileConn, error) {
 
 	return FileConn{
 		inAddress: FileAddress{
-			inputfn,
+			inputFN,
 		},
 		outAddress: FileAddress{
-			outputfn,
+			outputFN,
 		},
 		sizeOfFile: sizeOfFile,
 		amountRead: 0,

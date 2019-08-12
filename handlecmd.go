@@ -15,7 +15,7 @@ func sendError(packet ReceivedPacket, cmd utils.Command, desc string) {
 		"level":       "error",
 		"description": desc,
 	})
-	packet.CTX.sendPacket(pkt)
+	packet.CTX.SendPacket(pkt)
 }
 
 // Handlers
@@ -31,14 +31,14 @@ func handleCmdConnect(packet ReceivedPacket, cmd utils.Command) error {
 	packet.CTX.Channel = serverInstance.Channels[app]
 
 	pkt := Create.PCMWindowAckSize(packet.CTX.ServerWindowAcknowledgement)
-	packet.CTX.sendPacket(pkt)
+	packet.CTX.SendPacket(pkt)
 	pkt = Create.PAMSetPeerBandwidth(packet.CTX.PeerBandwidth, 1)
-	packet.CTX.sendPacket(pkt)
+	packet.CTX.SendPacket(pkt)
 	streamID := serverInstance.createStream()
 	pkt = Create.UCMStreamBegin(int(streamID))
-	packet.CTX.sendPacket(pkt)
+	packet.CTX.SendPacket(pkt)
 	pkt = Create.resultMessage(int(cmd.TransactionID), nil, amf0.Undefined{})
-	packet.CTX.sendPacket(pkt)
+	packet.CTX.SendPacket(pkt)
 	return nil
 }
 
@@ -50,7 +50,7 @@ func handleCmdCreateStream(packet ReceivedPacket, cmd utils.Command) {
 	// TODO FIX: streamID is not added to result massage as uint isn't supported
 	// in amf0 parser. Didn't notice it, when fixed i couldn't connect with OBS
 	pkt := Create.resultMessage(int(cmd.TransactionID), nil, uint(streamID))
-	packet.CTX.sendPacket(pkt)
+	packet.CTX.SendPacket(pkt)
 }
 
 type CMDPlayParameters struct {
@@ -101,14 +101,14 @@ func parseCMDPlayParameters(raw []interface{}) (CMDPlayParameters, error) {
 
 func handleCmdPlay(packet ReceivedPacket, cmd utils.Command, params CMDPlayParameters) error {
 	pkt := Create.PCMSetChunkSize(packet.CTX.ChunkSize)
-	packet.CTX.sendPacket(pkt)
+	packet.CTX.SendPacket(pkt)
 	pkt = Create.UCMStreamIsRecorded(int(packet.CTX.ChunkStreamID))
-	packet.CTX.sendPacket(pkt)
+	packet.CTX.SendPacket(pkt)
 	pkt = Create.UCMStreamBegin(int(packet.CTX.ChunkStreamID))
-	packet.CTX.sendPacket(pkt)
+	packet.CTX.SendPacket(pkt)
 	pkt = Create.onStatusMessage("status", "NetStream.Play.Start", "Play stream")
 	if params.Reset {
-		packet.CTX.sendPacket(pkt)
+		packet.CTX.SendPacket(pkt)
 		pkt = Create.onStatusMessage("status", "NetStream.Play.Reset", "Reset stream")
 	}
 	if packet.CTX.Channel.Metadata != nil {
@@ -116,10 +116,10 @@ func handleCmdPlay(packet ReceivedPacket, cmd utils.Command, params CMDPlayParam
 			"onMetaData",
 			amf0.CreateECMAArray(packet.CTX.Channel.Metadata),
 		})
-		packet.CTX.sendPacket(pkt)
+		packet.CTX.SendPacket(pkt)
 		fmt.Println("Metadata has been send")
 	}
-	packet.CTX.Channel.subscribe(packet.CTX)
+	packet.CTX.Channel.Subscribe(packet.CTX)
 	return nil
 }
 
@@ -151,7 +151,7 @@ func parseCMDPublishParameters(raw []interface{}) (cmdPublishParameters, error) 
 }
 
 func handleCmdPublish(packet ReceivedPacket, cmd utils.Command, params cmdPublishParameters) error {
-	if packet.CTX.Channel.verify(params.Name) {
+	if packet.CTX.Channel.Verify(params.Name) {
 		return errors.New("Key is incorrect")
 	}
 
@@ -159,7 +159,7 @@ func handleCmdPublish(packet ReceivedPacket, cmd utils.Command, params cmdPublis
 	packet.CTX.VideoHandler = createVideoHandler(packet.CTX)
 
 	pkt := Create.onStatusMessage("status", "NetStream.Publish.Start", "Started publishing stream")
-	packet.CTX.sendPacket(pkt)
+	packet.CTX.SendPacket(pkt)
 	return nil
 }
 

@@ -35,7 +35,7 @@ func handleUCM(packet ReceivedPacket) error {
 	case 6:
 		// PingRequest
 		pkt := Create.UCMPingResponse(packet.Data[2:6])
-		packet.CTX.sendPacket(pkt)
+		packet.CTX.SendPacket(pkt)
 	case 7:
 		// PingResponse
 		// Only client
