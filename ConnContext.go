@@ -36,8 +36,9 @@ type ConnContext struct {
 	HeadersCache       *HeadersCache
 	LastSendTimestamp  RTMPTime
 
-	AmountRead  int
-	AmountWrote int
+	AmountRead    int
+	LastAckAmount int
+	AmountWrote   int
 
 	Properties *map[string]interface{}
 
@@ -85,6 +86,9 @@ func (ctx *ConnContext) Read(b []byte) (int, error) {
 		ctx.DumpFileForRead.Write(b[:n])
 	}
 	ctx.AmountRead += len(b)
+
+	ctx.CheckAck()
+
 	return n, err
 }
 
@@ -96,6 +100,14 @@ func (ctx *ConnContext) Write(b []byte) (int, error) {
 	}
 	ctx.AmountWrote += len(b)
 	return n, err
+}
+
+func (ctx *ConnContext) CheckAck() {
+	if ctx.ClientWindowAcknowledgement != 0 && ctx.AmountRead-ctx.LastAckAmount >= ctx.ClientWindowAcknowledgement {
+		pkt := Create.PCMAcknowledgement(ctx.AmountRead - ctx.LastAckAmount)
+		ctx.LastAckAmount = ctx.AmountRead
+		ctx.SendPacket(pkt)
+	}
 }
 
 // ReadPacket _

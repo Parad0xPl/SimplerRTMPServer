@@ -10,6 +10,8 @@ func WriteAny(raw interface{}) []byte {
 		buff = WriteString(v)
 	case int:
 		buff = WriteNumber(float64(v))
+	case uint:
+		buff = WriteNumber(float64(v))
 	case float64:
 		buff = WriteNumber(v)
 	case nil:
