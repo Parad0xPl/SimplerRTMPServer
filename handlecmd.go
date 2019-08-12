@@ -10,10 +10,14 @@ import (
 
 // sendError wrapper
 func sendError(packet ReceivedPacket, cmd utils.Command, desc string) {
-	pkt := Create.errorMessage(int(cmd.TransactionID), nil, map[string]interface{}{
-		"code":        "error",
-		"level":       "error",
-		"description": desc,
+	pkt := Create.errorMessage(CommandArgs{
+		int(cmd.TransactionID),
+		nil,
+		map[string]interface{}{
+			"code":        "error",
+			"level":       "error",
+			"description": desc,
+		},
 	})
 	packet.CTX.SendPacket(pkt)
 }
@@ -37,7 +41,12 @@ func handleCmdConnect(packet ReceivedPacket, cmd utils.Command) error {
 	streamID := serverInstance.createStream()
 	pkt = Create.UCMStreamBegin(int(streamID))
 	packet.CTX.SendPacket(pkt)
-	pkt = Create.resultMessage(int(cmd.TransactionID), nil, amf0.Undefined{})
+	pkt = Create.resultMessage(CommandArgs{
+		int(cmd.TransactionID),
+		nil,
+		amf0.Undefined{},
+	})
+	pkt.Head.MessageStreamID = packet.CTX.NetStreamID
 	packet.CTX.SendPacket(pkt)
 	return nil
 }
@@ -47,9 +56,11 @@ func handleCmdCreateStream(packet ReceivedPacket, cmd utils.Command) {
 	packet.CTX.NetStreamID = streamID
 	log.Println("Create NetStream:", streamID)
 	// streamID casted to uint as int create some strange behaviour
-	// TODO FIX: streamID is not added to result massage as uint isn't supported
-	// in amf0 parser. Didn't notice it, when fixed i couldn't connect with OBS
-	pkt := Create.resultMessage(int(cmd.TransactionID), nil, uint(streamID))
+	pkt := Create.resultMessage(CommandArgs{
+		int(cmd.TransactionID),
+		nil,
+		uint(streamID),
+	})
 	packet.CTX.SendPacket(pkt)
 }
 

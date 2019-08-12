@@ -21,7 +21,7 @@ func WriteECAMArray(data map[string]interface{}) []byte {
 	rawLen := len(data)
 	parsed := make([][]byte, rawLen*2+3)
 	parsed[0] = []byte{8}
-	parsed[1] = utils.WriteInt(rawLen, 4)
+	parsed[1] = utils.WriteIntBE(rawLen, 4)
 	i := 2
 	for key, val := range data {
 		parsed[i] = WriteString(key)[1:]

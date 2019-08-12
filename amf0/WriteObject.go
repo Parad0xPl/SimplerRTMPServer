@@ -12,7 +12,7 @@ func WriteObject(m map[string]interface{}) []byte {
 	var tmp []byte
 	for i, v := range m {
 		tmp = []byte(i)
-		buff.Write(utils.WriteInt(len(tmp), 2))
+		buff.Write(utils.WriteIntBE(len(tmp), 2))
 		buff.Write(tmp)
 		buff.Write(WriteAny(v))
 	}

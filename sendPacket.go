@@ -60,6 +60,7 @@ func (ctx *ConnContext) SendPacket(pkt PacketPrototype) {
 	messLen := len(body)
 	if header.ChunkStreamID == 0 {
 		header.ChunkStreamID = ctx.ChunkStreamID
+		header.MessageStreamID = ctx.NetStreamID
 		defer func() {
 			ctx.ChunkStreamID++
 		}()

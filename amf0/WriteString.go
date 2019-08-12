@@ -7,5 +7,5 @@ import (
 // WriteString AMF0 format
 func WriteString(str string) []byte {
 	tmp := []byte(str)
-	return utils.Concat([]byte{2}, utils.WriteInt(len(tmp), 2), tmp)
+	return utils.Concat([]byte{2}, utils.WriteIntBE(len(tmp), 2), tmp)
 }

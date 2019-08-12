@@ -2,6 +2,7 @@ package main
 
 import (
 	"SimpleRTMPServer/utils"
+	"encoding/binary"
 	"errors"
 )
 
@@ -125,7 +126,7 @@ func (builder *HeaderReceiver) type0() error {
 	}
 	builder.messageLength = utils.ReadInt(tmp[3:6])
 	builder.messageTypeID = int(tmp[6])
-	builder.messageStreamID = utils.ReadInt(tmp[7:])
+	builder.messageStreamID = int(binary.LittleEndian.Uint32(tmp[7:11]))
 	return nil
 }
 

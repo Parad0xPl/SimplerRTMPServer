@@ -73,7 +73,7 @@ func (create) UCMStreamBegin(streamID int) PacketPrototype {
 		MessageStreamID: 0,
 		ChunkStreamID:   2,
 	}
-	body, _ := build.Body.UCM(0, utils.WriteInt(streamID, 4))
+	body, _ := build.Body.UCM(0, utils.WriteIntBE(streamID, 4))
 	return PacketPrototype{head, body}
 }
 
@@ -83,7 +83,7 @@ func (create) UCMStreamEOF(streamID int) PacketPrototype {
 		MessageStreamID: 0,
 		ChunkStreamID:   2,
 	}
-	body, _ := build.Body.UCM(1, utils.WriteInt(streamID, 4))
+	body, _ := build.Body.UCM(1, utils.WriteIntBE(streamID, 4))
 	return PacketPrototype{head, body}
 }
 
@@ -93,7 +93,7 @@ func (create) UCMStreamDry(streamID int) PacketPrototype {
 		MessageStreamID: 0,
 		ChunkStreamID:   2,
 	}
-	body, _ := build.Body.UCM(2, utils.WriteInt(streamID, 4))
+	body, _ := build.Body.UCM(2, utils.WriteIntBE(streamID, 4))
 	return PacketPrototype{head, body}
 }
 
@@ -103,7 +103,7 @@ func (create) UCMSetBufferLength(streamID, buffLen int) PacketPrototype {
 		MessageStreamID: 0,
 		ChunkStreamID:   2,
 	}
-	eventData := utils.Concat(utils.WriteInt(streamID, 4), utils.WriteInt(buffLen, 4))
+	eventData := utils.Concat(utils.WriteIntBE(streamID, 4), utils.WriteIntBE(buffLen, 4))
 	body, _ := build.Body.UCM(3, eventData)
 	return PacketPrototype{head, body}
 }
@@ -114,7 +114,7 @@ func (create) UCMStreamIsRecorded(streamID int) PacketPrototype {
 		MessageStreamID: 0,
 		ChunkStreamID:   2,
 	}
-	body, _ := build.Body.UCM(4, utils.WriteInt(streamID, 4))
+	body, _ := build.Body.UCM(4, utils.WriteIntBE(streamID, 4))
 	return PacketPrototype{head, body}
 }
 
@@ -124,7 +124,7 @@ func (create) UCMPingRequest(timestamp int) PacketPrototype {
 		MessageStreamID: 0,
 		ChunkStreamID:   2,
 	}
-	body, _ := build.Body.UCM(6, utils.WriteInt(timestamp, 4))
+	body, _ := build.Body.UCM(6, utils.WriteIntBE(timestamp, 4))
 	return PacketPrototype{head, body}
 }
 
@@ -137,7 +137,7 @@ func (create) UCMPingResponse(timestamp interface{}) PacketPrototype {
 	var body []byte
 	switch v := timestamp.(type) {
 	case int:
-		body, _ = build.Body.UCM(7, utils.WriteInt(v, 4))
+		body, _ = build.Body.UCM(7, utils.WriteIntBE(v, 4))
 	case []byte:
 		body, _ = build.Body.UCM(7, v)
 	}
@@ -153,22 +153,28 @@ func (create) commandMessage(raw []interface{}) PacketPrototype {
 	return PacketPrototype{head, body}
 }
 
-func (create) resultMessage(transID int, props, infos interface{}) PacketPrototype {
+type CommandArgs struct {
+	TransactionID int
+	Properties    interface{}
+	Information   interface{}
+}
+
+func (create) resultMessage(args CommandArgs) PacketPrototype {
 	raw := make([]interface{}, 4)
 	raw[0] = "_result"
-	raw[1] = transID
-	raw[2] = props
-	raw[3] = infos
+	raw[1] = args.TransactionID
+	raw[2] = args.Properties
+	raw[3] = args.Information
 	packet := Create.commandMessage(raw)
 	return packet
 }
 
-func (create) errorMessage(transID int, props, infos interface{}) PacketPrototype {
+func (create) errorMessage(args CommandArgs) PacketPrototype {
 	raw := make([]interface{}, 4)
 	raw[0] = "_error"
-	raw[1] = transID
-	raw[2] = props
-	raw[3] = infos
+	raw[1] = args.TransactionID
+	raw[2] = args.Properties
+	raw[3] = args.Information
 	packet := Create.commandMessage(raw)
 	return packet
 }
