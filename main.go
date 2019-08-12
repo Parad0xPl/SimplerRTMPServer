@@ -12,7 +12,7 @@ func main() {
 	fmt.Println("Starting SimpleRTMP Server")
 
 	options.init()
-	initStrMan()
+	initServerInstance()
 
 	if options.FileConnectionInput != "" &&
 		options.FileConnectionOutput != "" {

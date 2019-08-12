@@ -23,6 +23,7 @@ func (t RTMPTime) uint32() uint32 {
 
 // ConnContext Structure for connection data and settings
 type ConnContext struct {
+	Index   int
 	Conn    net.Conn
 	Channel *ChannelObject
 
@@ -65,6 +66,10 @@ func (ctx *ConnContext) Clear() {
 	}
 	if ctx.IsMetadataSet {
 		ctx.Channel.Metadata = nil
+	}
+
+	if ctx.Channel.isSubscribed(ctx) {
+		ctx.Channel.unsubscribe(ctx)
 	}
 	ctx.Conn.Close()
 }
@@ -133,6 +138,7 @@ func (ctx *ConnContext) ReadPacket() (Header, []byte, error) {
 func initCTX(conn net.Conn) ConnContext {
 
 	ctx := ConnContext{
+		Index:                       serverInstance.NewConn(),
 		Conn:                        conn,
 		ChunkSize:                   128,
 		InitTime:                    RTMPTime(getTime()),

@@ -25,16 +25,16 @@ func handleCmdConnect(packet ReceivedPacket, cmd utils.Command) error {
 	if !ok {
 		return errors.New("Channel name need to specified")
 	}
-	if !streamsMan.checkChannel(app) {
+	if !serverInstance.checkChannel(app) {
 		return errors.New("Channel doesn't exists")
 	}
-	packet.CTX.Channel = streamsMan.Channels[app]
+	packet.CTX.Channel = serverInstance.Channels[app]
 
 	pkt := Create.PCMWindowAckSize(packet.CTX.ServerWindowAcknowledgement)
 	packet.CTX.sendPacket(pkt)
 	pkt = Create.PAMSetPeerBandwidth(packet.CTX.PeerBandwidth, 1)
 	packet.CTX.sendPacket(pkt)
-	streamID := streamsMan.createStream()
+	streamID := serverInstance.createStream()
 	pkt = Create.UCMStreamBegin(int(streamID))
 	packet.CTX.sendPacket(pkt)
 	pkt = Create.resultMessage(int(cmd.TransactionID), nil, amf0.Undefined{})
@@ -43,7 +43,7 @@ func handleCmdConnect(packet ReceivedPacket, cmd utils.Command) error {
 }
 
 func handleCmdCreateStream(packet ReceivedPacket, cmd utils.Command) {
-	streamID := streamsMan.createStream()
+	streamID := serverInstance.createStream()
 	packet.CTX.NetStreamID = streamID
 	log.Println("Create NetStream:", streamID)
 	// streamID casted to uint as int create some strange behaviour
