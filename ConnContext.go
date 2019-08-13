@@ -63,7 +63,7 @@ func (ctx *ConnContext) Clear() {
 		ctx.Channel.Metadata = nil
 	}
 
-	if ctx.Channel.IsSubscribed(ctx) {
+	if ctx.Channel != nil && ctx.Channel.IsSubscribed(ctx) {
 		ctx.Channel.Unsubscribe(ctx)
 	}
 	ctx.Conn.Close()
