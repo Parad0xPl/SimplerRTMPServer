@@ -1,8 +1,10 @@
 package main
 
 import (
+	"SimpleRTMPServer/amf0"
 	"SimpleRTMPServer/utils"
 	"fmt"
+	"strings"
 )
 
 func formatByteSlice(slc []byte) string {
@@ -49,6 +51,46 @@ func getType(p ReceivedPacket) (string, bool) {
 	return "undefined", true
 }
 
+func Indent(builder *strings.Builder, indent int) {
+	const indentString = "  "
+	for i := 0; i < indent; i++ {
+		builder.WriteString(indentString)
+	}
+}
+
+func CreateString(builder *strings.Builder, data interface{}, indent int) {
+	switch typed := data.(type) {
+	case []interface{}:
+		Indent(builder, indent)
+		builder.WriteString("[\n")
+
+		for _, v := range typed {
+			CreateString(builder, v, indent+1)
+		}
+
+		Indent(builder, indent)
+		builder.WriteString("]\n")
+	case map[string]interface{}:
+		Indent(builder, indent)
+		builder.WriteString("{\n")
+		for key, v := range typed {
+			Indent(builder, indent+1)
+			builder.WriteString(fmt.Sprintf("[%s]: %v\n", key, v))
+		}
+		Indent(builder, indent)
+		builder.WriteString("}\n")
+	default:
+		Indent(builder, indent)
+		builder.WriteString(fmt.Sprintln(typed))
+	}
+}
+
+func Print(data interface{}) {
+	builder := new(strings.Builder)
+	CreateString(builder, data, 0)
+	fmt.Print(builder.String())
+}
+
 func analyze(fn string) {
 	fmt.Printf("Analyzing %s file.\n", fn)
 	conn, err := utils.OpenFileConn(fn, "")
@@ -79,8 +121,10 @@ func analyze(fn string) {
 
 	index := 1
 	for {
-		fmt.Printf("[%d] Position %d\n", index, conn.AmountRead())
+		amountRead := conn.AmountRead()
 		header, bytes, err := ctx.ReadPacket()
+
+		fmt.Printf("[%d] Position %d\n", index, amountRead)
 
 		p := ReceivedPacket{
 			&ctx,
@@ -94,11 +138,12 @@ func analyze(fn string) {
 		fmt.Printf("[%d] Header: %s\n", index, header)
 		fmt.Printf("[%d] Type: %s\n", index, typeOf)
 		fmt.Printf("[%d] DataLen: %d\n", index, len(bytes))
-		if ifPrintData {
-			fmt.Printf("[%d] Data: \n%s\n", index, formatByteSlice(bytes))
-		}
 
 		if err != nil {
+			if header.ChunkStreamID == 0 {
+				fmt.Println("End of file")
+				return
+			}
 			fmt.Println("Can't read packet\n", err)
 			return
 		}
@@ -107,6 +152,19 @@ func analyze(fn string) {
 			err := handlePCM(p)
 			if err != nil {
 				fmt.Println("Problem with PCM", err)
+			}
+		} else {
+			switch header.MessageTypeID {
+			case 18:
+				decoded := amf0.Read(bytes)
+				Print(decoded)
+			case 20:
+				decoded := amf0.Read(bytes)
+				Print(decoded)
+			default:
+				if ifPrintData {
+					fmt.Printf("[%d] Data: \n%s\n", index, formatByteSlice(bytes))
+				}
 			}
 		}
 
