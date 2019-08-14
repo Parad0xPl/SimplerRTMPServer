@@ -7,23 +7,33 @@ import (
 )
 
 // ReadECMAArray _
-func ReadECMAArray(data []byte) (map[string]interface{}, int) {
+func ReadECMAArray(input []byte, inputLength int) (error, map[string]interface{}, int) {
+	var err error = nil
 	offset := 0
-	aLen := utils.ReadInt(data[0:4])
+	aLen := utils.ReadInt(input[0:4])
 	offset += 4
 	i := 0
 	ret := make(map[string]interface{})
 	for i < aLen {
-		prop, n := ReadString(data[offset:])
+		var prop string
+		var n int
+		var item interface{}
+		err, prop, n = ReadString(input[offset:], inputLength-offset)
 		offset += n
-		item, n := ReadAny(data[offset:])
+		if err != nil {
+			return err, ret, offset
+		}
+		err, item, n = ReadAny(input[offset:], inputLength-offset)
 		offset += n
 		ret[prop] = item
+		if err != nil {
+			return err, ret, offset
+		}
 		i++
 	}
-	if bytes.Compare(data[offset:offset+3], []byte{0x0, 0x0, 0x09}) != 0 {
+	if bytes.Compare(input[offset:offset+3], []byte{0x0, 0x0, 0x09}) != 0 {
 		log.Println("ECMA Array don't end with EoB marker")
 	}
 	offset += 3
-	return ret, offset
+	return err, ret, offset
 }

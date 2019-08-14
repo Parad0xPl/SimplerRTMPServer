@@ -40,7 +40,10 @@ func handlePacket(packet ReceivedPacket) error {
 			// TODO handle AMF3 command
 		case 18:
 			log.Println("AMF0 data received")
-			parsedData := amf0.Read(packet.Data)
+			err, parsedData := amf0.Read(packet.Data, len(packet.Data))
+			if err != nil {
+				return err
+			}
 			i := 0
 			parLen := len(parsedData)
 			for i < parLen {
@@ -51,7 +54,7 @@ func handlePacket(packet ReceivedPacket) error {
 						arr, ok := parsedData[i+1].(map[string]interface{})
 						if !ok {
 							log.Println("There is no metadata")
-							return err
+							return nil
 						}
 						i++
 						fmt.Println("Metadata has been set")

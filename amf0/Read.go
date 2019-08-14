@@ -1,14 +1,16 @@
 package amf0
 
 // Read whole array and return all data encoded
-func Read(data []byte) []interface{} {
+func Read(input []byte, inputLength int) (error, []interface{}) {
 	i := 0
-	dataLen := len(data)
 	var parsedData []interface{}
-	for i < dataLen {
-		tmp, n := ReadAny(data[i:])
+	for i < inputLength {
+		err, tmp, n := ReadAny(input[i:], inputLength-i)
 		parsedData = append(parsedData, tmp)
+		if err != nil {
+			return err, parsedData
+		}
 		i += n
 	}
-	return parsedData
+	return nil, parsedData
 }

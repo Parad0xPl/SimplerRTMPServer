@@ -7,6 +7,9 @@ import (
 
 func handleAMF0cmd(packet ReceivedPacket) error {
 	log.Println("AMF0 command")
-	parsed := amf0.Read(packet.Data)
+	err, parsed := amf0.Read(packet.Data, len(packet.Data))
+	if err != nil {
+		return err
+	}
 	return handleCmd(packet, parsed)
 }

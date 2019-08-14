@@ -156,11 +156,19 @@ func analyze(fn string) {
 		} else {
 			switch header.MessageTypeID {
 			case 18:
-				decoded := amf0.Read(bytes)
-				Print(decoded)
+				err, decoded := amf0.Read(bytes, len(bytes))
+				if err != nil {
+					fmt.Println("AMF0 Data corruption:", err)
+				} else {
+					Print(decoded)
+				}
 			case 20:
-				decoded := amf0.Read(bytes)
-				Print(decoded)
+				err, decoded := amf0.Read(bytes, len(bytes))
+				if err != nil {
+					fmt.Println("AMF0 Command corruption:", err)
+				} else {
+					Print(decoded)
+				}
 			default:
 				if ifPrintData {
 					fmt.Printf("[%d] Data: \n%s\n", index, formatByteSlice(bytes))

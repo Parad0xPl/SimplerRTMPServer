@@ -1,25 +1,35 @@
 package amf0
 
+import "errors"
+
 // ReadAny data from byte array
-func ReadAny(data []byte) (interface{}, int) {
+func ReadAny(input []byte, inputLength int) (error, interface{}, int) {
 	var tmp interface{}
+	var err error = nil
 	var n int
-	switch data[0] {
-	case 0:
-		tmp, n = ReadNumber(data[1:])
-	case 1:
-		tmp, n = ReadBoolean(data[1:])
-	case 2:
-		tmp, n = ReadString(data[1:])
-	case 3:
-		tmp, n = ReadObject(data[1:])
-	case 5:
+	if inputLength < 1 {
+		return errors.New("input too short"), nil, 0
+	}
+	switch input[0] {
+	case 0x00:
+		err, tmp, n = ReadNumber(input[1:], inputLength-1)
+	case 0x01:
+		err, tmp, n = ReadBoolean(input[1:], inputLength-1)
+	case 0x02:
+		err, tmp, n = ReadString(input[1:], inputLength-1)
+	case 0x03:
+		err, tmp, n = ReadObject(input[1:], inputLength-1)
+	case 0x05:
 		tmp = nil
 		n = 0
-	case 8:
-		tmp, n = ReadECMAArray(data[1:])
+	case 0x06:
+		tmp = Undefined{}
+		n = 0
+	case 0x08:
+		err, tmp, n = ReadECMAArray(input[1:], inputLength-1)
 	default:
-		return nil, 1
+		err = errors.New("unsupported AMF0 type")
+		return err, nil, 1
 	}
-	return tmp, n + 1
+	return err, tmp, n + 1
 }
