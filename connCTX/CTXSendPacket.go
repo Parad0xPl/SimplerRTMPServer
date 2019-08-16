@@ -1,19 +1,20 @@
-package main
+package connCTX
 
 import (
 	"SimpleRTMPServer/build"
+	"SimpleRTMPServer/packet"
 	"SimpleRTMPServer/utils"
 	"bytes"
 )
 
-func checkType1(h, o Header) bool {
+func checkType1(h, o *packet.Header) bool {
 	if h.MessageStreamID != o.MessageStreamID {
 		return false
 	}
 	return true
 }
 
-func checkType2(h, o Header) bool {
+func checkType2(h, o *packet.Header) bool {
 	if h.MessageLength != o.MessageLength {
 		return false
 	} else if h.MessageTypeID != o.MessageTypeID {
@@ -22,7 +23,7 @@ func checkType2(h, o Header) bool {
 	return true
 }
 
-func (ctx *ConnContext) sendChunk(pkt PacketPrototype) {
+func (ctx *ConnContext) sendChunk(pkt packet.Prototype) {
 	header := pkt.Head
 	body := pkt.Body
 	buffer := new(bytes.Buffer)
@@ -39,22 +40,22 @@ func (ctx *ConnContext) sendChunk(pkt PacketPrototype) {
 	} else if header.Compare(*ctx.LastHeaderSend) {
 		buffer.Write(build.Header.Basic(3, header.ChunkStreamID))
 		buffer.Write(build.Header.Type3(ctx.Delta(header.MessageTimestamp)))
-	} else if checkType2(*ctx.LastHeaderSend, header) {
+	} else if checkType2(ctx.LastHeaderSend, header) {
 		buffer.Write(build.Header.Basic(2, header.ChunkStreamID))
 		buffer.Write(build.Header.Type2(ctx.Delta(header.MessageTimestamp)))
-	} else if checkType1(*ctx.LastHeaderSend, header) {
+	} else if checkType1(ctx.LastHeaderSend, header) {
 		buffer.Write(build.Header.Basic(1, header.ChunkStreamID))
 		buffer.Write(build.Header.Type1(ctx.Delta(header.MessageTimestamp), header.MessageLength, header.MessageTypeID))
 	} else {
 		buffer.Write(build.Header.Basic(0, header.ChunkStreamID))
 		buffer.Write(build.Header.Type0(header.Timestamp(), header.MessageLength, header.MessageTypeID, header.MessageStreamID))
 	}
-	ctx.LastHeaderSend = &header
+	ctx.LastHeaderSend = header
 	buffer.Write(body)
 	ctx.Write(buffer.Bytes())
 }
 
-func (ctx *ConnContext) SendPacket(pkt PacketPrototype) {
+func (ctx *ConnContext) SendPacket(pkt packet.Prototype) {
 	header := pkt.Head
 	body := pkt.Body
 	messLen := len(body)
@@ -68,7 +69,7 @@ func (ctx *ConnContext) SendPacket(pkt PacketPrototype) {
 	header.MessageLength = messLen
 	header.MessageTimestamp = ctx.GetTime()
 	for i := 0; i < messLen; i += ctx.ChunkSize {
-		ctx.sendChunk(PacketPrototype{header, body[i:utils.Min(i+ctx.ChunkSize, messLen)]})
+		ctx.sendChunk(packet.Prototype{header, body[i:utils.Min(i+ctx.ChunkSize, messLen)]})
 	}
 	// TODO: support value overflow
 	ctx.LastSendTimestamp = header.MessageTimestamp

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"SimpleRTMPServer/connCTX"
 	"bytes"
 	"crypto/rand"
 	"encoding/binary"
@@ -9,7 +10,7 @@ import (
 	"log"
 )
 
-func handshake(ctx *ConnContext) error {
+func handshake(ctx *connCTX.ConnContext) error {
 
 	// Read c0
 	c0 := make([]byte, 1)

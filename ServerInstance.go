@@ -1,101 +1,28 @@
 package main
 
 import (
-	"SimpleRTMPServer/hash"
-	"errors"
+	"SimpleRTMPServer/connCTX"
+	"SimpleRTMPServer/utils"
 	"math/rand"
 	"time"
 )
 
-// StreamObject represent stream
-type StreamObject struct{}
-
-// ServerInstance Object which store server data
-type ServerInstance struct {
-	TopFreeID int
-	NewConnID int
-	DB        map[int]StreamObject
-	Channels  map[string]*ChannelObject
-	Published map[string]int
-	Hash      hash.Gen
-}
-
-func (sm *ServerInstance) NewConn() int {
-	defer func() {
-		sm.NewConnID++
-	}()
-	return sm.NewConnID
-}
-
-func (sm *ServerInstance) checkChannel(name string) bool {
-	_, ok := sm.Channels[name]
-	return ok
-}
-
-func (sm *ServerInstance) addChannel(name, key string) {
-	if sm.checkChannel(name) == false {
-		sm.Channels[name] = &ChannelObject{
-			Name:       name,
-			Key:        key,
-			Subscribed: make(map[hash.Type]*ConnContext),
-		}
-	}
-}
-
-func (sm *ServerInstance) createStream() int {
-	tmp := sm.TopFreeID
-	sm.TopFreeID++
-	sm.DB[tmp] = StreamObject{}
-	return tmp
-}
-
-func (sm *ServerInstance) checkID(id int) bool {
-	_, ok := sm.DB[id]
-	return ok
-}
-
-func (sm *ServerInstance) destroyStream(id int) {
-	if sm.checkID(id) {
-		delete(sm.DB, id)
-	}
-}
-
-func (sm *ServerInstance) checkName(name string) bool {
-	_, ok := sm.Published[name]
-	return ok
-}
-
-func (sm *ServerInstance) publish(id int, name string) error {
-	if sm.checkName(name) {
-		return errors.New("Name reserved")
-	}
-	sm.Published[name] = id
-	return nil
-}
-
-func (sm *ServerInstance) unPublish(name string) {
-	if !sm.checkName(name) {
-		return
-	}
-	delete(sm.Published, name)
-}
-
-var serverInstance ServerInstance
+var serverInstance *connCTX.ServerInstance
 
 func initServerInstance() {
 
 	rand.Seed(time.Now().UnixNano())
 
-	serverInstance = ServerInstance{
+	serverInstance = &connCTX.ServerInstance{
 		TopFreeID: 10,
 		NewConnID: 1,
 	}
-	serverInstance.DB = make(map[int]StreamObject)
+	serverInstance.DB = make(map[int]connCTX.StreamObject)
 	serverInstance.Published = make(map[string]int)
-	serverInstance.Channels = make(map[string]*ChannelObject)
+	serverInstance.Channels = make(map[string]*connCTX.ChannelObject)
 
-	serverInstance.Hash = hash.InitGen()
+	serverInstance.Hash = utils.NewGen()
 
 	// Temporary static channel
-	serverInstance.addChannel("ksawk", "keyfortheapp")
+	serverInstance.AddChannel("ksawk", "keyfortheapp")
 }

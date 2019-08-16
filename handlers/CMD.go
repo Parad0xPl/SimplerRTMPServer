@@ -1,7 +1,8 @@
-package main
+package handlers
 
 import (
 	"SimpleRTMPServer/amf0"
+	"SimpleRTMPServer/packet"
 	"SimpleRTMPServer/utils"
 	"errors"
 	"fmt"
@@ -9,8 +10,8 @@ import (
 )
 
 // sendError wrapper
-func sendError(packet ReceivedPacket, cmd utils.Command, desc string) {
-	pkt := Create.errorMessage(CommandArgs{
+func sendError(recvPacket ReceivedPacket, cmd utils.Command, desc string) {
+	pkt := packet.Create.ErrorMessage(packet.CommandArgs{
 		int(cmd.TransactionID),
 		nil,
 		map[string]interface{}{
@@ -19,49 +20,53 @@ func sendError(packet ReceivedPacket, cmd utils.Command, desc string) {
 			"description": desc,
 		},
 	})
-	packet.CTX.SendPacket(pkt)
+	recvPacket.CTX.SendPacket(pkt)
 }
 
 // Handlers
 
-func handleCmdConnect(packet ReceivedPacket, cmd utils.Command) error {
+func handleCmdConnect(recvPacket ReceivedPacket, cmd utils.Command) error {
 	app, ok := cmd.CMDObject["app"].(string)
 	if !ok {
 		return errors.New("Channel name need to specified")
 	}
-	if !serverInstance.checkChannel(app) {
+	if recvPacket.ServerInstance.CheckChannel(app) {
 		return errors.New("Channel doesn't exists")
 	}
-	packet.CTX.Channel = serverInstance.Channels[app]
+	recvPacket.CTX.Channel = recvPacket.ServerInstance.Channels[app]
 
-	pkt := Create.PCMWindowAckSize(packet.CTX.ServerWindowAcknowledgement)
-	packet.CTX.SendPacket(pkt)
-	pkt = Create.PAMSetPeerBandwidth(packet.CTX.PeerBandwidth, 1)
-	packet.CTX.SendPacket(pkt)
-	streamID := serverInstance.createStream()
-	pkt = Create.UCMStreamBegin(int(streamID))
-	packet.CTX.SendPacket(pkt)
-	pkt = Create.resultMessage(CommandArgs{
+	pkt := packet.Create.PCMWindowAckSize(recvPacket.CTX.ServerWindowAcknowledgement)
+	recvPacket.CTX.SendPacket(pkt)
+	pkt = packet.Create.PCMSetPeerBandwidth(recvPacket.CTX.PeerBandwidth, 1)
+	recvPacket.CTX.SendPacket(pkt)
+	streamID := recvPacket.ServerInstance.CreateStream()
+	pkt = packet.Create.UCMStreamBegin(int(streamID))
+	recvPacket.CTX.SendPacket(pkt)
+	pkt = packet.Create.ResultMessage(packet.CommandArgs{
 		int(cmd.TransactionID),
-		nil,
+		map[string]interface{}{
+			"mode":         1,
+			"capabilities": 127,
+			"fmsVer":       "FMS/3,5,3,888",
+		},
 		amf0.Undefined{},
 	})
-	pkt.Head.MessageStreamID = packet.CTX.NetStreamID
-	packet.CTX.SendPacket(pkt)
+	pkt.Head.MessageStreamID = recvPacket.CTX.NetStreamID
+	recvPacket.CTX.SendPacket(pkt)
 	return nil
 }
 
-func handleCmdCreateStream(packet ReceivedPacket, cmd utils.Command) {
-	streamID := serverInstance.createStream()
-	packet.CTX.NetStreamID = streamID
+func handleCmdCreateStream(recvPacket ReceivedPacket, cmd utils.Command) {
+	streamID := recvPacket.ServerInstance.CreateStream()
+	recvPacket.CTX.NetStreamID = streamID
 	log.Println("Create NetStream:", streamID)
 	// streamID casted to uint as int create some strange behaviour
-	pkt := Create.resultMessage(CommandArgs{
+	pkt := packet.Create.ResultMessage(packet.CommandArgs{
 		int(cmd.TransactionID),
 		nil,
 		uint(streamID),
 	})
-	packet.CTX.SendPacket(pkt)
+	recvPacket.CTX.SendPacket(pkt)
 }
 
 type CMDPlayParameters struct {
@@ -110,27 +115,28 @@ func parseCMDPlayParameters(raw []interface{}) (CMDPlayParameters, error) {
 	}, nil
 }
 
-func handleCmdPlay(packet ReceivedPacket, cmd utils.Command, params CMDPlayParameters) error {
-	pkt := Create.PCMSetChunkSize(packet.CTX.ChunkSize)
-	packet.CTX.SendPacket(pkt)
-	pkt = Create.UCMStreamIsRecorded(int(packet.CTX.ChunkStreamID))
-	packet.CTX.SendPacket(pkt)
-	pkt = Create.UCMStreamBegin(int(packet.CTX.ChunkStreamID))
-	packet.CTX.SendPacket(pkt)
-	pkt = Create.onStatusMessage("status", "NetStream.Play.Start", "Play stream")
+func handleCmdPlay(recvPacket ReceivedPacket, cmd utils.Command, params CMDPlayParameters) error {
+	pkt := packet.Create.PCMSetChunkSize(recvPacket.CTX.ChunkSize)
+	recvPacket.CTX.SendPacket(pkt)
+	pkt = packet.Create.UCMStreamIsRecorded(int(recvPacket.CTX.ChunkStreamID))
+	recvPacket.CTX.SendPacket(pkt)
+	pkt = packet.Create.UCMStreamBegin(int(recvPacket.CTX.ChunkStreamID))
+	recvPacket.CTX.SendPacket(pkt)
 	if params.Reset {
-		packet.CTX.SendPacket(pkt)
-		pkt = Create.onStatusMessage("status", "NetStream.Play.Reset", "Reset stream")
+		pkt = packet.Create.OnStatusMessage("status", "NetStream.Play.Reset", "Reset stream")
+		recvPacket.CTX.SendPacket(pkt)
 	}
-	if packet.CTX.Channel.Metadata != nil {
-		pkt = Create.amf0Data([]interface{}{
+	recvPacket.CTX.SendPacket(pkt)
+	pkt = packet.Create.OnStatusMessage("status", "NetStream.Play.Start", "Play stream")
+	if recvPacket.CTX.Channel.Metadata != nil {
+		pkt = packet.Create.AMF0Data([]interface{}{
 			"onMetaData",
-			amf0.CreateECMAArray(packet.CTX.Channel.Metadata),
+			amf0.CreateECMAArray(recvPacket.CTX.Channel.Metadata),
 		})
-		packet.CTX.SendPacket(pkt)
+		recvPacket.CTX.SendPacket(pkt)
 		fmt.Println("Metadata has been send")
 	}
-	packet.CTX.Channel.Subscribe(packet.CTX)
+	recvPacket.CTX.Channel.Subscribe(recvPacket.CTX)
 	return nil
 }
 
@@ -161,20 +167,20 @@ func parseCMDPublishParameters(raw []interface{}) (cmdPublishParameters, error) 
 	}, nil
 }
 
-func handleCmdPublish(packet ReceivedPacket, cmd utils.Command, params cmdPublishParameters) error {
-	if packet.CTX.Channel.Verify(params.Name) {
+func handleCmdPublish(recvPacket ReceivedPacket, cmd utils.Command, params cmdPublishParameters) error {
+	if recvPacket.CTX.Channel.Verify(params.Name) {
 		return errors.New("Key is incorrect")
 	}
 
-	packet.CTX.AudioHandler = createAudioHandler(packet.CTX)
-	packet.CTX.VideoHandler = createVideoHandler(packet.CTX)
+	recvPacket.CTX.AudioHandler = createAudioHandler(recvPacket.CTX)
+	recvPacket.CTX.VideoHandler = createVideoHandler(recvPacket.CTX)
 
-	pkt := Create.onStatusMessage("status", "NetStream.Publish.Start", "Started publishing stream")
-	packet.CTX.SendPacket(pkt)
+	pkt := packet.Create.OnStatusMessage("status", "NetStream.Publish.Start", "Started publishing stream")
+	recvPacket.CTX.SendPacket(pkt)
 	return nil
 }
 
-func handleCmd(packet ReceivedPacket, raw []interface{}) error {
+func handleCmd(recvPacket ReceivedPacket, raw []interface{}) error {
 	var err error
 	err = nil
 
@@ -189,9 +195,9 @@ func handleCmd(packet ReceivedPacket, raw []interface{}) error {
 	case "connect":
 		cmdObj, ok := raw[2].(map[string]interface{})
 		if ok {
-			packet.CTX.Properties = &cmdObj
+			recvPacket.CTX.Properties = &cmdObj
 		}
-		err = handleCmdConnect(packet, command)
+		err = handleCmdConnect(recvPacket, command)
 
 	case "releaseStream":
 		name, ok := raw[3].(string)
@@ -209,26 +215,26 @@ func handleCmd(packet ReceivedPacket, raw []interface{}) error {
 		fmt.Println("FCPublish:", name)
 
 	case "createStream":
-		handleCmdCreateStream(packet, command)
+		handleCmdCreateStream(recvPacket, command)
 
 	case "play":
 		params, err := parseCMDPlayParameters(raw[3:])
 		if err != nil {
 			break
 		}
-		handleCmdPlay(packet, command, params)
+		handleCmdPlay(recvPacket, command, params)
 
 	case "publish":
 		params, err := parseCMDPublishParameters(raw[3:])
 		if err != nil {
 			break
 		}
-		err = handleCmdPublish(packet, command, params)
+		err = handleCmdPublish(recvPacket, command, params)
 
 	}
 
 	if err != nil {
-		sendError(packet, command, err.Error())
+		sendError(recvPacket, command, err.Error())
 	}
 
 	return err

@@ -1,4 +1,4 @@
-package hash
+package utils
 
 import (
 	"math/rand"
@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 func TestGen_String(t *testing.T) {
 
 	t.Run("Should return same hash for same string", func(t *testing.T) {
-		gen := InitGen()
+		gen := NewGen()
 		for i := 0; i < 10; i++ {
 			testStr := RandStringRunes(16)
 			hash1 := gen.String(testStr)
@@ -43,9 +43,9 @@ func TestGen_String(t *testing.T) {
 
 	t.Run("Should return different hash when two separate generators are used", func(t *testing.T) {
 		testStr := RandStringRunes(16)
-		gen := InitGen()
+		gen := NewGen()
 		hash1 := gen.String(testStr)
-		gen = InitGen()
+		gen = NewGen()
 		hash2 := gen.String(testStr)
 		if hash1 == hash2 {
 			t.Errorf("String() doesn't return diffrent hash.\nHash1: %d\tHash2: %d", hash1, hash2)

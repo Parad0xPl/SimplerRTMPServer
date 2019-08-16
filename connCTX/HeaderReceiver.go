@@ -1,6 +1,7 @@
-package main
+package connCTX
 
 import (
+	"SimpleRTMPServer/packet"
 	"SimpleRTMPServer/utils"
 	"encoding/binary"
 	"errors"
@@ -9,13 +10,13 @@ import (
 // HeaderReceiver provide nice way of reading header from ctx
 // handles reading data from last header with same chunk stream ID
 type HeaderReceiver struct {
-	ctx  *ConnContext
+	CTX  *ConnContext
 	size int
 
 	isBasicHeaderRead   bool
 	isMessageHeaderRead bool
 
-	lastHeader *Header
+	lastHeader *packet.Header
 
 	chunkID int
 	format  int
@@ -27,11 +28,11 @@ type HeaderReceiver struct {
 }
 
 // Header return finished header
-func (builder *HeaderReceiver) Header() Header {
-	return Header{
+func (builder *HeaderReceiver) Header() packet.Header {
+	return packet.Header{
 		ChunkStreamID:    builder.chunkID,
 		Format:           builder.format,
-		MessageTimestamp: RTMPTime(builder.timestamp),
+		MessageTimestamp: packet.RTMPTime(builder.timestamp),
 		MessageLength:    builder.messageLength,
 		MessageTypeID:    builder.messageTypeID,
 		MessageStreamID:  builder.messageStreamID,
@@ -48,7 +49,7 @@ func (builder *HeaderReceiver) getBasicHeader() error {
 	var err error
 
 	firstByte := make([]byte, 1)
-	_, err = builder.ctx.Read(firstByte)
+	_, err = builder.CTX.Read(firstByte)
 	builder.size++
 	if err != nil {
 		return err
@@ -68,7 +69,7 @@ func (builder *HeaderReceiver) getBasicHeader() error {
 	case 0:
 		// 2 bytes long
 		tmp = make([]byte, 1)
-		_, err = builder.ctx.Read(tmp)
+		_, err = builder.CTX.Read(tmp)
 		builder.size++
 		if err != nil {
 			return err
@@ -78,7 +79,7 @@ func (builder *HeaderReceiver) getBasicHeader() error {
 	case 1:
 		// 3 bytes long
 		tmp = make([]byte, 2)
-		_, err = builder.ctx.Read(tmp)
+		_, err = builder.CTX.Read(tmp)
 		builder.size += 2
 		if err != nil {
 			return err
@@ -97,7 +98,7 @@ func (builder *HeaderReceiver) getBasicHeader() error {
 // getExtendedTime read extended time and replace old value
 func (builder *HeaderReceiver) getExtendedTime() error {
 	tmp := make([]byte, 4)
-	n, err := builder.ctx.Read(tmp)
+	n, err := builder.CTX.Read(tmp)
 	if n != 4 || err != nil {
 		return errors.New("Problem with extended time.")
 	}
@@ -112,7 +113,7 @@ func (builder *HeaderReceiver) type0() error {
 	// 11 bytes long
 	// Full data passed in header
 	tmp := make([]byte, 11)
-	_, err := builder.ctx.Read(tmp)
+	_, err := builder.CTX.Read(tmp)
 	builder.size += 11
 	if err != nil {
 		return err
@@ -137,7 +138,7 @@ func (builder *HeaderReceiver) type1() error {
 	// StreamID is skipped
 	// Time delta instead of time
 	tmp := make([]byte, 7)
-	_, err := builder.ctx.Read(tmp)
+	_, err := builder.CTX.Read(tmp)
 	builder.size += 7
 	if err != nil {
 		return err
@@ -162,7 +163,7 @@ func (builder *HeaderReceiver) type2() error {
 	// 3 bytes long
 	// Only time delta is given
 	tmp := make([]byte, 3)
-	_, err := builder.ctx.Read(tmp)
+	_, err := builder.CTX.Read(tmp)
 	builder.size += 3
 	if err != nil {
 		return err
@@ -246,9 +247,9 @@ func (builder *HeaderReceiver) Get() error {
 	builder.messageTypeID = -1
 	builder.messageStreamID = -1
 
-	builder.lastHeader = builder.ctx.HeadersCache.Get(builder.chunkID)
+	builder.lastHeader = builder.CTX.HeadersCache.Get(builder.chunkID)
 	if builder.lastHeader == nil {
-		builder.lastHeader = builder.ctx.LastHeaderReceived
+		builder.lastHeader = builder.CTX.LastHeaderReceived
 	}
 
 	err = builder.messageHeader()
@@ -257,21 +258,4 @@ func (builder *HeaderReceiver) Get() error {
 	}
 
 	return nil
-}
-
-// getHeader read Header from ctx
-func getHeader(ctx *ConnContext) (Header, error) {
-	builder := HeaderReceiver{
-		ctx: ctx,
-	}
-	err := builder.Get()
-	if err != nil {
-		return Header{}, err
-	}
-
-	header := builder.Header()
-	ctx.HeadersCache.Insert(header.ChunkStreamID, &header)
-	ctx.LastHeaderReceived = &header
-
-	return header, nil
 }

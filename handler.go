@@ -2,36 +2,31 @@ package main
 
 import (
 	"SimpleRTMPServer/amf0"
+	"SimpleRTMPServer/handlers"
+	"SimpleRTMPServer/packet"
 	"fmt"
 	"log"
 	"net"
 )
 
-// ReceivedPacket wrapper for all packet related data
-type ReceivedPacket struct {
-	CTX    *ConnContext
-	Header *Header
-	Data   []byte // Should work as long any handler won't try append to slice
-}
-
-func handlePacket(packet ReceivedPacket) error {
+func handlePacket(recvPacket handlers.ReceivedPacket) error {
 	var err error
-	if packet.Header.ChunkStreamID == 2 && packet.Header.MessageStreamID == 0 {
+	if recvPacket.Header.ChunkStreamID == 2 && recvPacket.Header.MessageStreamID == 0 {
 		// Take effect when received
-		err = handlePCM(packet)
+		err = handlers.PCM(recvPacket)
 		return err
 	} else {
-		switch packet.Header.MessageTypeID {
+		switch recvPacket.Header.MessageTypeID {
 		case 8:
-			if packet.CTX.AudioHandler != nil {
-				log.Println("Audio data received. Len:", len(packet.Data))
-				packet.CTX.AudioHandler(packet.Data)
+			if recvPacket.CTX.AudioHandler != nil {
+				log.Println("Audio data received. Len:", len(recvPacket.Data))
+				recvPacket.CTX.AudioHandler(recvPacket.Data)
 			}
 			return nil
 		case 9:
-			if packet.CTX.VideoHandler != nil {
-				log.Println("Video data received. Len:", len(packet.Data))
-				packet.CTX.VideoHandler(packet.Data)
+			if recvPacket.CTX.VideoHandler != nil {
+				log.Println("Video data received. Len:", len(recvPacket.Data))
+				recvPacket.CTX.VideoHandler(recvPacket.Data)
 			}
 			return nil
 		case 15:
@@ -40,7 +35,7 @@ func handlePacket(packet ReceivedPacket) error {
 			// TODO handle AMF3 command
 		case 18:
 			log.Println("AMF0 data received")
-			err, parsedData := amf0.Read(packet.Data, len(packet.Data))
+			err, parsedData := amf0.Read(recvPacket.Data, len(recvPacket.Data))
 			if err != nil {
 				return err
 			}
@@ -58,14 +53,21 @@ func handlePacket(packet ReceivedPacket) error {
 						}
 						i++
 						fmt.Println("Metadata has been set")
-						packet.CTX.Channel.Metadata = arr
-						packet.CTX.IsMetadataSet = true
+						for _, cn := range recvPacket.CTX.Channel.Subscribed {
+							pkt := packet.Create.AMF0Data([]interface{}{
+								"onMetaData",
+								amf0.CreateECMAArray(arr),
+							})
+							cn.SendPacket(pkt)
+						}
+						recvPacket.CTX.Channel.Metadata = arr
+						recvPacket.CTX.IsMetadataSet = true
 					}
 				}
 				i++
 			}
 		case 20:
-			err = handleAMF0cmd(packet)
+			err = handlers.AMF0cmd(recvPacket)
 			return err
 		}
 	}
@@ -74,11 +76,11 @@ func handlePacket(packet ReceivedPacket) error {
 
 func handler(conn net.Conn) {
 	fmt.Printf("Connection started: %s\n", conn.RemoteAddr().String())
-	ctx := initCTX(conn)
+	ctx := NewCTX(conn)
 	defer ctx.Clear()
 
 	// Handle handshake
-	err := handshake(&ctx)
+	err := handshake(ctx)
 	if err != nil {
 		log.Println(err)
 		if conn.LocalAddr().Network() != "file" {
@@ -93,8 +95,9 @@ func handler(conn net.Conn) {
 			return
 		}
 
-		err = handlePacket(ReceivedPacket{
-			&ctx,
+		err = handlePacket(handlers.ReceivedPacket{
+			ctx,
+			serverInstance,
 			&header,
 			data,
 		})

@@ -1,4 +1,4 @@
-package main
+package packet
 
 import (
 	"fmt"
@@ -41,7 +41,7 @@ func (h *Header) Compare(o Header) bool {
 
 // Timestamp get timestamp
 func (h *Header) Timestamp() uint32 {
-	return h.MessageTimestamp.uint32()
+	return h.MessageTimestamp.Uint32()
 }
 
 // CopyFrom other header

@@ -10,14 +10,14 @@ func CountBits(v uint64) uint {
 	return counter
 }
 
-// RotateBitsRight rotate right a bits of v
-func RotateBitsRight(v uint64, a uint8) uint64 {
+// RotateRight rotate right a bits of v
+func RotateRight(v uint64, a uint8) uint64 {
 	a &= 64 - 1
 	return (v << (64 - a)) | (v >> a)
 }
 
-// RotateBitsLeft rotate left a bits of v
-func RotateBitsLeft(v uint64, a uint8) uint64 {
+// RotateLeft rotate left a bits of v
+func RotateLeft(v uint64, a uint8) uint64 {
 	a &= 64 - 1
-	return RotateBitsRight(v, 64-a)
+	return RotateRight(v, 64-a)
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"SimpleRTMPServer/amf0"
+	"SimpleRTMPServer/handlers"
 	"SimpleRTMPServer/utils"
 	"fmt"
 	"strings"
@@ -25,7 +26,7 @@ func formatByteSlice(slc []byte) string {
 	return string(target)
 }
 
-func getType(p ReceivedPacket) (string, bool) {
+func getType(p handlers.ReceivedPacket) (string, bool) {
 	if p.Header.ChunkStreamID == 2 && p.Header.MessageStreamID == 0 {
 		if p.Header.MessageTypeID == 4 {
 			return "UCM", false
@@ -116,7 +117,7 @@ func analyze(fn string) {
 		return
 	}
 
-	ctx := initCTX(&conn)
+	ctx := NewCTX(&conn)
 	defer ctx.Clear()
 
 	index := 1
@@ -126,8 +127,9 @@ func analyze(fn string) {
 
 		fmt.Printf("[%d] Position %d\n", index, amountRead)
 
-		p := ReceivedPacket{
-			&ctx,
+		p := handlers.ReceivedPacket{
+			ctx,
+			serverInstance,
 			&header,
 			bytes,
 		}
@@ -149,7 +151,7 @@ func analyze(fn string) {
 		}
 
 		if header.ChunkStreamID == 2 && header.MessageStreamID == 0 {
-			err := handlePCM(p)
+			err := handlers.PCM(p)
 			if err != nil {
 				fmt.Println("Problem with PCM", err)
 			}
@@ -158,14 +160,18 @@ func analyze(fn string) {
 			case 18:
 				err, decoded := amf0.Read(bytes, len(bytes))
 				if err != nil {
-					fmt.Println("AMF0 Data corruption:", err)
+					fmt.Println("[ERR]AMF0 Data corruption:", err)
+					fmt.Println("[ERR]Part")
+					Print(decoded)
 				} else {
 					Print(decoded)
 				}
 			case 20:
 				err, decoded := amf0.Read(bytes, len(bytes))
 				if err != nil {
-					fmt.Println("AMF0 Command corruption:", err)
+					fmt.Println("[ERR]AMF0 Command corruption:", err)
+					fmt.Println("[ERR]Part")
+					Print(decoded)
 				} else {
 					Print(decoded)
 				}

@@ -1,4 +1,4 @@
-package main
+package packet
 
 type headerCacheMap map[int]*Header
 
@@ -6,7 +6,7 @@ type HeadersCache struct {
 	cache headerCacheMap
 }
 
-func newHeadersCache() *HeadersCache {
+func NewHeadersCache() *HeadersCache {
 	return &HeadersCache{
 		cache: make(headerCacheMap, 100),
 	}

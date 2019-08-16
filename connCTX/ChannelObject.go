@@ -1,6 +1,8 @@
-package main
+package connCTX
 
-import "SimpleRTMPServer/hash"
+import (
+	"SimpleRTMPServer/utils"
+)
 
 // ChannelObject represent stream
 // TODO: Clean() all closed connections
@@ -8,7 +10,7 @@ import "SimpleRTMPServer/hash"
 type ChannelObject struct {
 	Name       string
 	Key        string
-	Subscribed map[hash.Type]*ConnContext
+	Subscribed map[utils.Hash]*ConnContext
 	Metadata   map[string]interface{}
 }
 
